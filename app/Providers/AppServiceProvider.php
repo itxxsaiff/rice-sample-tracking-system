@@ -30,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
             'buyer' => \App\Models\Buyer::class,
             'sample' => \App\Models\Sample::class,
             'bundle' => \App\Models\SampleBundle::class,
+            'dispatch' => \App\Models\SampleDispatch::class,
         ]);
 
         // Catch N+1 queries and silently discarded attributes during development.

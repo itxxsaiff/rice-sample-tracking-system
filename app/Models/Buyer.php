@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Buyer extends Model
 {
@@ -34,10 +35,15 @@ class Buyer extends Model
             ->orWhere('phone', 'like', $like));
     }
 
+    public function dispatches(): HasMany
+    {
+        return $this->hasMany(SampleDispatch::class);
+    }
+
     /** True once the buyer has dispatches attached (blocks deletion). */
     public function hasHistory(): bool
     {
-        return false;
+        return $this->dispatches()->exists();
     }
 
     public function label(): string

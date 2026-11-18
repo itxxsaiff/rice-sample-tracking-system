@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sample extends Model
 {
@@ -60,9 +61,15 @@ class Sample extends Model
         return rtrim(rtrim(number_format((float) $this->quantity, 2), '0'), '.').' '.$this->quantity_unit;
     }
 
+    public function dispatches(): HasMany
+    {
+        return $this->hasMany(SampleDispatch::class);
+    }
+
+    /** Dispatched samples are part of buyer history and cannot be deleted. */
     public function hasHistory(): bool
     {
-        return false;
+        return $this->dispatches()->exists();
     }
 
     public function scopeFilter(Builder $query, array $filters): void
@@ -84,6 +91,8 @@ class Sample extends Model
             ->when($filters['bundle_id'] ?? null, fn (Builder $q, $id) => $q->where('sample_bundle_id', $id))
             ->when($filters['city'] ?? null, fn (Builder $q, $city) => $q->whereHas('mill', fn (Builder $m) => $m->where('city', $city)))
             ->when($filters['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '>=', $date))
-            ->when($filters['to'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '<=', $date));
+            ->when($filters['to'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '<=', $date))
+            ->when(($filters['sent'] ?? null) === 'no', fn (Builder $q) => $q->doesntHave('dispatches'))
+            ->when(($filters['sent'] ?? null) === 'yes', fn (Builder $q) => $q->has('dispatches'));
     }
 }
