@@ -33,6 +33,23 @@ class SampleDispatchPolicy
         return ! $dispatch->isPending() && ! $dispatch->hasLoadings();
     }
 
+    /** Rejected and pending dispatches never enter the loading workflow. */
+    public function recordLoading(User $user, SampleDispatch $dispatch): bool
+    {
+        return $dispatch->acceptsLoadings();
+    }
+
+    public function completeLoading(User $user, SampleDispatch $dispatch): bool
+    {
+        return $dispatch->acceptsLoadings() && $dispatch->hasLoadings();
+    }
+
+    /** Reopening a completed order is an admin correction. */
+    public function reopenLoading(User $user, SampleDispatch $dispatch): bool
+    {
+        return $user->isAdmin() && $dispatch->isLoadingCompleted();
+    }
+
     /** Only a still-pending dispatch (e.g. created by mistake) can be removed, and only by an admin. */
     public function delete(User $user, SampleDispatch $dispatch): bool
     {

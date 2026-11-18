@@ -106,7 +106,61 @@ function focusFirstError() {
     }
 }
 
+/** "Last truck" checkbox switches the primary button to complete the whole order. */
+function initCompleteToggle() {
+    const toggle = document.querySelector('[data-complete-toggle]');
+    const button = document.querySelector('[data-loaded-button]');
+    if (!toggle || !button) return;
+    const label = button.querySelector('span');
+    const original = label.textContent;
+    toggle.addEventListener('change', () => {
+        button.value = toggle.checked ? 'complete' : 'loaded';
+        label.textContent = toggle.checked ? 'Save & complete order' : original;
+    });
+}
+
+/** Full-screen photo viewer with previous/next for [data-viewer-item] links. */
+function initPhotoViewer() {
+    const modalEl = document.getElementById('photoViewer');
+    if (!modalEl) return;
+    const items = Array.from(document.querySelectorAll('[data-viewer-item]'));
+    const img = modalEl.querySelector('[data-viewer-image]');
+    const caption = modalEl.querySelector('[data-viewer-caption]');
+    const openLink = modalEl.querySelector('[data-viewer-open]');
+    const modal = new Modal(modalEl);
+    let index = 0;
+
+    const show = (i) => {
+        index = (i + items.length) % items.length;
+        img.src = items[index].href;
+        openLink.href = items[index].href;
+        caption.textContent = `${items[index].dataset.caption || ''}  (${index + 1}/${items.length})`;
+    };
+
+    items.forEach((item, i) => item.addEventListener('click', (e) => { e.preventDefault(); show(i); modal.show(); }));
+    modalEl.querySelector('[data-viewer-prev]').addEventListener('click', () => show(index - 1));
+    modalEl.querySelector('[data-viewer-next]').addEventListener('click', () => show(index + 1));
+    modalEl.querySelectorAll('[data-viewer-prev], [data-viewer-next]').forEach((b) => b.classList.toggle('d-none', items.length < 2));
+
+    // Swipe left/right on phones.
+    let startX = null;
+    img.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+    img.addEventListener('touchend', (e) => {
+        if (startX === null) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+        startX = null;
+    });
+    document.addEventListener('keydown', (e) => {
+        if (!modalEl.classList.contains('show')) return;
+        if (e.key === 'ArrowLeft') show(index - 1);
+        if (e.key === 'ArrowRight') show(index + 1);
+    });
+}
+
 export function initUi() {
+    initCompleteToggle();
+    initPhotoViewer();
     initToasts();
     initConfirmations();
     initBusyButtons();

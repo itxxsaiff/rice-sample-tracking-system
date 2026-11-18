@@ -72,7 +72,52 @@
                 </div>
             @endif
 
-            @stack('dispatch-sections')
+            @if ($dispatch->isConfirmed())
+                <div class="card mb-4">
+                    <div class="card-header justify-content-between flex-wrap">
+                        <h2><i class="bi bi-truck text-primary me-2"></i>Loading <x-status-badge :status="$dispatch->stageKey() === 'confirmed' ? 'loading_pending' : $dispatch->stageKey()" class="ms-1">{{ $dispatch->loading_status->label() }}</x-status-badge></h2>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @can('recordLoading', $dispatch)
+                                <a href="{{ route('loadings.create', $dispatch) }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> {{ $dispatch->loadings->isEmpty() ? 'Record loading' : 'Add truck' }}</a>
+                            @endcan
+                            @can('completeLoading', $dispatch)
+                                <form method="POST" action="{{ route('dispatches.complete-loading', $dispatch) }}" data-confirm="Mark order {{ $dispatch->dispatch_number }} as fully loaded and completed? All trucks must be marked loaded." data-confirm-title="Complete order?" data-confirm-button="Complete order" data-confirm-variant="primary">
+                                    @csrf @method('PATCH')
+                                    <button class="btn btn-sm btn-soft"><i class="bi bi-check2-all"></i> Complete order</button>
+                                </form>
+                            @endcan
+                            @can('reopenLoading', $dispatch)
+                                <form method="POST" action="{{ route('dispatches.reopen-loading', $dispatch) }}" data-confirm="The order will move back to 'loading in progress' so more trucks can be added." data-confirm-title="Reopen order?" data-confirm-button="Reopen" data-confirm-variant="primary">
+                                    @csrf @method('PATCH')
+                                    <button class="btn btn-sm btn-light"><i class="bi bi-arrow-counterclockwise"></i> Reopen order</button>
+                                </form>
+                            @endcan
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @include('loading._progress')
+                        @if ($dispatch->loading_completed_at)<div class="small text-muted mt-2"><i class="bi bi-check2-all"></i> Completed {{ $dispatch->loading_completed_at->format('d M Y, H:i') }}</div>@endif
+                    </div>
+                    @if ($dispatch->loadings->isEmpty())
+                        <div class="card-body pt-0"><p class="text-muted small mb-0">No trucks recorded yet. Tap <strong>Record loading</strong> when the rice is loaded.</p></div>
+                    @else
+                        <div class="list-group list-group-flush">
+                            @foreach ($dispatch->loadings as $loading)
+                                <a href="{{ route('loadings.show', $loading) }}" class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center gap-3">
+                                    <span class="d-flex align-items-center gap-3 min-w-0">
+                                        <span class="stat-icon tone-teal" style="width:40px;height:40px;font-size:1.1rem"><i class="bi bi-truck"></i></span>
+                                        <span class="min-w-0">
+                                            <span class="d-block fw-semibold mono">{{ $loading->truck_number }}</span>
+                                            <span class="small text-muted">{{ $loading->loading_date->format('d M Y') }} · {{ $loading->quantityLabel() }}{{ $loading->bag_count ? ' · '.number_format($loading->bag_count).' bags' : '' }} · <i class="bi bi-camera"></i> {{ $loading->photos_count }}</span>
+                                        </span>
+                                    </span>
+                                    <x-status-badge :status="$loading->isCompleted() ? 'completed' : 'in_progress'">{{ $loading->status->label() }}</x-status-badge>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
         <div class="col-lg-4">
             @if ($siblings->isNotEmpty())

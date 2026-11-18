@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LoadingController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\MillController;
 use App\Http\Controllers\ProfileController;
@@ -37,6 +38,17 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respond'])->name('dispatches.respond.update');
     Route::patch('dispatches/{dispatch}/reopen', [SampleDispatchController::class, 'reopen'])->name('dispatches.reopen');
     Route::resource('dispatches', SampleDispatchController::class)->except(['edit', 'update']);
+
+    Route::get('loading', [LoadingController::class, 'index'])->name('loading.index');
+    Route::get('dispatches/{dispatch}/loadings/create', [LoadingController::class, 'create'])->name('loadings.create');
+    Route::post('dispatches/{dispatch}/loadings', [LoadingController::class, 'store'])->name('loadings.store');
+    Route::patch('dispatches/{dispatch}/complete-loading', [LoadingController::class, 'completeOrder'])->name('dispatches.complete-loading');
+    Route::patch('dispatches/{dispatch}/reopen-loading', [LoadingController::class, 'reopenOrder'])->name('dispatches.reopen-loading');
+    Route::patch('loadings/{loading}/loaded', [LoadingController::class, 'markLoaded'])->name('loadings.loaded');
+    Route::post('loadings/{loading}/photos', [LoadingController::class, 'storePhotos'])->name('loadings.photos.store');
+    Route::get('loading-photos/{photo}', [LoadingController::class, 'photo'])->name('loading-photos.show');
+    Route::delete('loading-photos/{photo}', [LoadingController::class, 'destroyPhoto'])->name('loading-photos.destroy');
+    Route::resource('loadings', LoadingController::class)->only(['show', 'edit', 'update', 'destroy']);
 
     Route::resource('mills', MillController::class);
     Route::resource('buyers', BuyerController::class);
