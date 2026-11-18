@@ -9,4 +9,12 @@
             </div>
         @endif
     @endforeach
+    @if ($errors->any() && ! session('error'))
+        <div class="toast align-items-center text-bg-warning" role="alert">
+            <div class="d-flex">
+                <div class="toast-body d-flex gap-2 align-items-center"><i class="bi bi-exclamation-triangle-fill"></i><span>Please check the highlighted {{ Str::plural('field', $errors->count()) }}.</span></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    @endif
 </div>
