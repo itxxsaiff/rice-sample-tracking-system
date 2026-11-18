@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RiceVariety extends Model
 {
@@ -32,8 +33,13 @@ class RiceVariety extends Model
             ->orderBy('name')->pluck('name', 'id')->all();
     }
 
+    public function samples(): HasMany
+    {
+        return $this->hasMany(Sample::class);
+    }
+
     public function hasHistory(): bool
     {
-        return false;
+        return $this->samples()->exists();
     }
 }

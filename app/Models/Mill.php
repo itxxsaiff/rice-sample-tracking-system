@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Mill extends Model
 {
@@ -34,10 +35,15 @@ class Mill extends Model
             ->orWhere('phone', 'like', $like));
     }
 
+    public function samples(): HasMany
+    {
+        return $this->hasMany(Sample::class);
+    }
+
     /** True once the mill has business records attached (blocks deletion). */
     public function hasHistory(): bool
     {
-        return false;
+        return $this->samples()->exists();
     }
 
     public function label(): string

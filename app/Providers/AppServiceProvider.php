@@ -28,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'mill' => \App\Models\Mill::class,
             'buyer' => \App\Models\Buyer::class,
+            'sample' => \App\Models\Sample::class,
+            'bundle' => \App\Models\SampleBundle::class,
         ]);
 
         // Catch N+1 queries and silently discarded attributes during development.
