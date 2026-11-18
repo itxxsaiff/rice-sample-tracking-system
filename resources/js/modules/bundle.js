@@ -14,6 +14,16 @@ export function initBundleBuilder() {
     const template = builder.querySelector('template[data-bundle-template]');
     const counter = document.querySelectorAll('[data-bundle-count]');
     let nextKey = parseInt(builder.dataset.nextKey || '0', 10);
+    const bundleDate = document.querySelector('[data-bundle-date]');
+    let previousDate = bundleDate?.value;
+
+    // Rows follow the bundle date unless the user changed a row's date by hand.
+    bundleDate?.addEventListener('change', () => {
+        container.querySelectorAll('[data-row-date]').forEach((input) => {
+            if (!input.value || input.value === previousDate) input.value = bundleDate.value;
+        });
+        previousDate = bundleDate.value;
+    });
 
     const renumber = () => {
         const rows = container.querySelectorAll('.bundle-row');
@@ -43,6 +53,8 @@ export function initBundleBuilder() {
             if (prevVariety) row.querySelector('select[data-variety-select]').value = prevVariety.value;
             if (prevUnit) row.querySelector('[data-unit-select]').value = prevUnit.value;
         }
+
+        if (bundleDate?.value) row.querySelector('[data-row-date]').value = bundleDate.value;
 
         container.appendChild(row);
         initPickers(row);

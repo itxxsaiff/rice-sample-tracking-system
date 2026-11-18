@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Mills\MillRequest;
 use App\Models\Mill;
+use App\Models\RiceVariety;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,11 +49,25 @@ class MillController extends Controller
         return redirect()->route('mills.show', $mill)->with('success', "{$mill->name} has been added.");
     }
 
-    public function show(Mill $mill): View
+    public function show(Request $request, Mill $mill): View
     {
         $this->authorize('view', $mill);
 
-        return view('mills.show', compact('mill'));
+        $samples = $mill->samples()
+            ->with(['variety:id,name', 'bundle:id,bundle_number'])
+            ->when($request->filled('variety_id'), fn ($q) => $q->where('rice_variety_id', $request->integer('variety_id')))
+            ->latest('collection_date')->latest('id')
+            ->paginate(15)->withQueryString();
+
+        $stats = [
+            'samples' => $mill->samples()->count(),
+            'varieties' => $mill->samples()->distinct()->count('rice_variety_id'),
+            'last_collected' => $mill->samples()->max('collection_date'),
+        ];
+
+        $varieties = RiceVariety::whereIn('id', $mill->samples()->select('rice_variety_id'))->orderBy('name')->pluck('name', 'id');
+
+        return view('mills.show', compact('mill', 'samples', 'stats', 'varieties'));
     }
 
     public function edit(Mill $mill): View

@@ -29,4 +29,35 @@
             </dl>
         </div>
     </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-4"><x-stat-card label="Samples" :value="$stats['samples']" icon="basket" /></div>
+        <div class="col-4"><x-stat-card label="Varieties" :value="$stats['varieties']" icon="tags" tone="gold" /></div>
+        <div class="col-4"><x-stat-card label="Last collected" :value="$stats['last_collected'] ? \Illuminate\Support\Carbon::parse($stats['last_collected'])->format('d M') : '—'" icon="calendar-event" tone="blue" /></div>
+    </div>
+
+    @stack('mill-sections')
+
+    <div class="card">
+        <div class="card-header flex-wrap">
+            <h2 class="flex-grow-1">Sample history</h2>
+            <div class="d-flex gap-2">
+                @if ($varieties->count() > 1)
+                    <form method="GET" data-auto-submit>
+                        <select name="variety_id" class="form-select form-select-sm" aria-label="Filter by variety">
+                            <option value="">All varieties</option>
+                            @foreach ($varieties as $id => $name)<option value="{{ $id }}" @selected(request('variety_id') == $id)>{{ $name }}</option>@endforeach
+                        </select>
+                    </form>
+                @endif
+                <a href="{{ route('samples.create', ['mill_id' => $mill->id]) }}" class="btn btn-sm btn-primary text-nowrap"><i class="bi bi-plus-lg"></i> Add sample</a>
+            </div>
+        </div>
+        @if ($samples->isEmpty())
+            <x-empty-state icon="basket" title="No samples from this mill yet" text="Samples you record for {{ $mill->name }} will appear here automatically." />
+        @else
+            @include('samples._table', ['samples' => $samples, 'hideMill' => true])
+            @if ($samples->hasPages())<div class="card-footer">{{ $samples->links() }}</div>@endif
+        @endif
+    </div>
 </x-layouts.app>

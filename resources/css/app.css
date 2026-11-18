@@ -427,3 +427,8 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); colo
     .page-header:not(.keep-mobile):not(:has(.page-actions)) { display: none; }
     .page-header { margin-bottom: 1rem; }
 }
+.action-bar-float { border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 1rem; }
+@media (max-width: 991.98px) { .action-bar-float { border-radius: 0; border-width: 1px 0 0; margin: 0; } }
+@media (max-width: 575.98px) {
+    .detail-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem 1rem; }
+}

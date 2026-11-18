@@ -7,6 +7,8 @@ use App\Http\Controllers\LookupController;
 use App\Http\Controllers\MillController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiceVarietyController;
+use App\Http\Controllers\SampleBundleController;
+use App\Http\Controllers\SampleController;
 use App\Http\Controllers\Settings\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +25,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('account', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('account', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('account/password', [ProfileController::class, 'password'])->name('profile.password');
+
+    Route::get('samples/{sample}/photo', [SampleController::class, 'photo'])->name('samples.photo');
+    Route::resource('samples', SampleController::class);
+    Route::get('bundles/{bundle}/samples/create', [SampleBundleController::class, 'addSamples'])->name('bundles.samples.create');
+    Route::post('bundles/{bundle}/samples', [SampleBundleController::class, 'storeSamples'])->name('bundles.samples.store');
+    Route::resource('bundles', SampleBundleController::class)->parameters(['bundles' => 'bundle']);
 
     Route::resource('mills', MillController::class);
     Route::resource('buyers', BuyerController::class);
