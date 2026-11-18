@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\MillController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RiceVarietyController;
 use App\Http\Controllers\Settings\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::resource('mills', MillController::class);
     Route::resource('buyers', BuyerController::class);
+    Route::resource('varieties', RiceVarietyController::class)->except(['show', 'create'])
+        ->parameters(['varieties' => 'variety']);
 
     Route::prefix('lookup')->name('lookup.')->group(function () {
         Route::get('mills', [LookupController::class, 'mills'])->name('mills');
