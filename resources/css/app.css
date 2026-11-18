@@ -439,7 +439,8 @@ a.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); colo
 .fw-medium { font-weight: 500; }
 
 /* Mobile refinements */
-.brand-mark svg { display: block; }
+.brand-logo { display: block; flex-shrink: 0; object-fit: contain; }
+.app-sidebar .brand-logo { background: #fff; border-radius: 10px; padding: 3px 6px; box-sizing: content-box; }
 @media (max-width: 991.98px) {
     .bottom-nav .fab { flex: 0 0 auto; }
     /* The app bar already shows the page title on phones. */

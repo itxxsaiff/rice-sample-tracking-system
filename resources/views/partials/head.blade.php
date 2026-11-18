@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Rice Samples">
 <meta name="format-detection" content="telephone=no">
 <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name') }}</title>
-<link rel="icon" href="{{ asset('icon.svg') }}" type="image/svg+xml">
+<link rel="icon" href="{{ asset('favicon-32.png') }}" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 @fonts

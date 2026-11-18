@@ -7,7 +7,7 @@
 <body @class(['has-action-bar' => $actionBar])>
     <aside class="app-sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-brand">
-            <x-brand-mark />
+            <x-brand-mark :size="38" />
             <span class="brand-text">Rice Samples<small>Tracking &amp; Dispatch</small></span>
         </a>
         <nav class="sidebar-nav">@include('partials.nav-links')</nav>
@@ -83,7 +83,7 @@
     <div class="offcanvas offcanvas-start offcanvas-nav" tabindex="-1" id="mobileNav" style="width: 290px">
         <div class="offcanvas-header border-bottom">
             <div class="d-flex align-items-center gap-2">
-                <x-brand-mark />
+                <x-brand-mark :size="40" />
                 <div><div class="fw-bold">Rice Samples</div><div class="small text-muted">{{ auth()->user()->name }} · {{ auth()->user()->role->label() }}</div></div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>

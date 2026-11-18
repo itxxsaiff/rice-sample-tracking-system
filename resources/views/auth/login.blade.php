@@ -1,7 +1,7 @@
 <x-layouts.guest title="Sign in">
     <div class="auth-card">
         <div class="text-center mb-4">
-            <x-brand-mark :size="60" class="d-flex mx-auto mb-3" style="border-radius:18px" />
+            <x-brand-mark :size="110" class="d-block mx-auto mb-3" />
             <h1 class="h4 fw-bold mb-1">Rice Sample Tracking</h1>
             <p class="text-muted mb-0">Sign in to continue</p>
         </div>
