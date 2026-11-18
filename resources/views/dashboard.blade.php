@@ -1,7 +1,7 @@
 <x-layouts.app title="Dashboard">
     <div class="page-header keep-mobile">
         <div>
-            <h1>Assalam-o-Alaikum, {{ Str::before($user->name, ' ') }}</h1>
+            <h1>Dashboard</h1>
             <p>{{ now()->format('l, j F Y') }}</p>
         </div>
         <div class="page-actions d-none d-md-flex">
