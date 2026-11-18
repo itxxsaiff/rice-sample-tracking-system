@@ -146,7 +146,7 @@ class DispatchService
     /** Return a responded dispatch to "awaiting response", keeping the old answer in the activity log. */
     public function reopen(SampleDispatch $dispatch, User $user): SampleDispatch
     {
-        return DB::transaction(function () use ($dispatch, $user) {
+        return DB::transaction(function () use ($dispatch) {
             $dispatch = SampleDispatch::query()->lockForUpdate()->findOrFail($dispatch->id);
 
             if ($dispatch->isPending()) {

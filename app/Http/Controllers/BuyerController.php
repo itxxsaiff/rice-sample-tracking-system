@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Buyers\BuyerRequest;
 use App\Enums\LoadingStatus;
+use App\Http\Requests\Buyers\BuyerRequest;
 use App\Models\Buyer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Buyer;
+use App\Models\Loading;
+use App\Models\Mill;
+use App\Models\Sample;
+use App\Models\SampleBundle;
+use App\Models\SampleDispatch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\Paginator;
@@ -26,12 +32,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Short, stable names in polymorphic columns (activities.subject_type).
         Relation::enforceMorphMap([
-            'mill' => \App\Models\Mill::class,
-            'buyer' => \App\Models\Buyer::class,
-            'sample' => \App\Models\Sample::class,
-            'bundle' => \App\Models\SampleBundle::class,
-            'dispatch' => \App\Models\SampleDispatch::class,
-            'loading' => \App\Models\Loading::class,
+            'mill' => Mill::class,
+            'buyer' => Buyer::class,
+            'sample' => Sample::class,
+            'bundle' => SampleBundle::class,
+            'dispatch' => SampleDispatch::class,
+            'loading' => Loading::class,
         ]);
 
         // Catch N+1 queries and silently discarded attributes during development.

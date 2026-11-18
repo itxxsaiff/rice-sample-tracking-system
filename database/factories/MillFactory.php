@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Mill;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Mill>
+ * @extends Factory<Mill>
  */
 class MillFactory extends Factory
 {

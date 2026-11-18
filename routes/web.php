@@ -9,10 +9,10 @@ use App\Http\Controllers\MillController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\RiceVarietyController;
-use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SampleBundleController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\SampleDispatchController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings\UserController;
 use Illuminate\Support\Facades\Route;
 

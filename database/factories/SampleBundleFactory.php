@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\SampleBundle;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\SampleBundle>
+ * @extends Factory<SampleBundle>
  */
 class SampleBundleFactory extends Factory
 {

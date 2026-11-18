@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\LoadingStatus;
 use App\Http\Requests\Loadings\LoadingPhotosRequest;
 use App\Http\Requests\Loadings\LoadingRequest;
 use App\Models\Buyer;

@@ -6,10 +6,11 @@ use App\Enums\DispatchStatus;
 use App\Enums\LoadingStatus;
 use App\Models\Buyer;
 use App\Models\Sample;
+use App\Models\SampleDispatch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\SampleDispatch>
+ * @extends Factory<SampleDispatch>
  */
 class SampleDispatchFactory extends Factory
 {

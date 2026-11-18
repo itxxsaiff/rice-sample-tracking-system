@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Loading;
-use App\Models\SampleBundle;
 use App\Models\Sample;
+use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

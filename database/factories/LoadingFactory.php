@@ -3,11 +3,12 @@
 namespace Database\Factories;
 
 use App\Enums\TruckLoadingStatus;
+use App\Models\Loading;
 use App\Models\SampleDispatch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Loading>
+ * @extends Factory<Loading>
  */
 class LoadingFactory extends Factory
 {

@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -13,7 +14,7 @@ use RuntimeException;
  */
 class WorkflowException extends RuntimeException
 {
-    public function render(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function render(Request $request): RedirectResponse|JsonResponse
     {
         if ($request->expectsJson()) {
             return response()->json(['message' => $this->getMessage()], 409);

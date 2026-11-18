@@ -4,10 +4,11 @@ namespace Database\Factories;
 
 use App\Models\Mill;
 use App\Models\RiceVariety;
+use App\Models\Sample;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\Sample>
+ * @extends Factory<Sample>
  */
 class SampleFactory extends Factory
 {

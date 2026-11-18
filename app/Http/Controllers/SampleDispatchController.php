@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\DispatchStatus;
 use App\Http\Requests\Dispatches\RespondDispatchRequest;
 use App\Http\Requests\Dispatches\StoreDispatchRequest;
 use App\Models\Buyer;

@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\RiceVariety;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<\App\Models\RiceVariety>
+ * @extends Factory<RiceVariety>
  */
 class RiceVarietyFactory extends Factory
 {
