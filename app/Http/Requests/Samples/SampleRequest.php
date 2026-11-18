@@ -26,7 +26,7 @@ class SampleRequest extends FormRequest
             'collection_date' => ['required', 'date', 'before_or_equal:today'],
             'sample_bundle_id' => ['nullable', 'integer', 'exists:sample_bundles,id'],
             'remove_photo' => ['sometimes', 'boolean'],
-            ...SampleRules::fields(),
+            ...SampleRules::fields(currentVarietyId: $this->route('sample')?->rice_variety_id),
         ];
     }
 

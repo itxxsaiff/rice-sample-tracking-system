@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
     })
@@ -23,4 +24,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Upload bigger than the server allows (post_max_size): explain instead of erroring.
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, Request $request) {
+            $message = 'The upload was too large. Please send fewer photos at a time.';
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $message], 413)
+                : back()->with('error', $message);
+        });
+
+        // Expired form (CSRF token) after leaving a page open for a long time.
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return back()->withInput($request->except(['password', 'password_confirmation', 'current_password', '_token']))
+                    ->with('warning', 'The page had expired. Please check the form and save again.');
+            }
+        });
     })->create();

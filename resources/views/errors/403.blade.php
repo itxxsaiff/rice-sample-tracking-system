@@ -1,0 +1,5 @@
+@extends('errors.layout')
+@section('code', '403')
+@section('icon', 'shield-lock')
+@section('title', 'Access denied')
+@section('message', $exception?->getMessage() && ! str_contains($exception->getMessage(), 'This action') ? $exception->getMessage() : 'You do not have permission to do this. If you think this is a mistake, ask the administrator.')

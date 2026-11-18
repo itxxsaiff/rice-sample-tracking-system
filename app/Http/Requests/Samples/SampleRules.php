@@ -17,11 +17,16 @@ final class SampleRules
         return ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9][A-Za-z0-9\-\/_. ]*$/', Rule::unique('samples', 'sample_number')->ignore($ignoreId)];
     }
 
-    public static function fields(string $prefix = ''): array
+    /**
+     * @param  int|null  $currentVarietyId  keeps an existing sample valid if its variety was later deactivated
+     */
+    public static function fields(string $prefix = '', ?int $currentVarietyId = null): array
     {
         return [
             $prefix.'mill_id' => ['required', 'integer', 'exists:mills,id'],
-            $prefix.'rice_variety_id' => ['required', 'integer', 'exists:rice_varieties,id'],
+            $prefix.'rice_variety_id' => ['required', 'integer', Rule::exists('rice_varieties', 'id')->where(
+                fn ($q) => $q->where('is_active', true)->when($currentVarietyId, fn ($q) => $q->orWhere('id', $currentVarietyId))
+            )],
             $prefix.'quantity' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             $prefix.'quantity_unit' => ['nullable', 'required_with:'.$prefix.'quantity', Rule::in(array_keys(config('rice.sample_units')))],
             $prefix.'notes' => ['nullable', 'string', 'max:2000'],

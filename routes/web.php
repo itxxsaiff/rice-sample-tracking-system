@@ -59,7 +59,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('varieties', RiceVarietyController::class)->except(['show', 'create'])
         ->parameters(['varieties' => 'variety']);
 
-    Route::prefix('lookup')->name('lookup.')->group(function () {
+    Route::prefix('lookup')->name('lookup.')->middleware('throttle:120,1')->group(function () {
         Route::get('mills', [LookupController::class, 'mills'])->name('mills');
         Route::get('buyers', [LookupController::class, 'buyers'])->name('buyers');
         Route::get('samples', [LookupController::class, 'samples'])->name('samples');
