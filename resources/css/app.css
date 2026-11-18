@@ -417,3 +417,13 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); colo
 .offcanvas-bottom.action-sheet { height: auto; border-radius: 20px 20px 0 0; padding-bottom: var(--safe-bottom); }
 .min-w-0 { min-width: 0; }
 .fw-medium { font-weight: 500; }
+
+/* Mobile refinements */
+.brand-mark svg { display: block; }
+@media (max-width: 991.98px) {
+    .bottom-nav .fab { flex: 0 0 auto; }
+    /* The app bar already shows the page title on phones. */
+    .page-header:not(.keep-mobile) h1, .page-header:not(.keep-mobile) > div > p { display: none; }
+    .page-header:not(.keep-mobile):not(:has(.page-actions)) { display: none; }
+    .page-header { margin-bottom: 1rem; }
+}

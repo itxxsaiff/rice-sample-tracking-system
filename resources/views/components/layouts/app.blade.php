@@ -7,7 +7,7 @@
 <body @class(['has-action-bar' => $actionBar])>
     <aside class="app-sidebar">
         <a href="{{ route('dashboard') }}" class="sidebar-brand">
-            <span class="brand-mark"><i class="bi bi-flower3"></i></span>
+            <x-brand-mark />
             <span class="brand-text">Rice Samples<small>Tracking &amp; Dispatch</small></span>
         </a>
         <nav class="sidebar-nav">@include('partials.nav-links')</nav>
@@ -31,7 +31,7 @@
             @else
                 <button class="btn btn-light btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
             @endif
-            <h1 class="topbar-title flex-grow-1">{{ $title ?? config('app.name') }}</h1>
+            <h1 class="topbar-title flex-grow-1"><span class="d-lg-none">{{ $title ?? config('app.name') }}</span></h1>
             @if (Route::has('samples.create'))
                 <a href="{{ route('samples.create') }}" class="btn btn-primary d-none d-lg-inline-flex"><i class="bi bi-plus-lg me-1"></i> Add Sample</a>
             @endif
@@ -78,7 +78,7 @@
     <div class="offcanvas offcanvas-start offcanvas-nav" tabindex="-1" id="mobileNav" style="width: 290px">
         <div class="offcanvas-header border-bottom">
             <div class="d-flex align-items-center gap-2">
-                <span class="brand-mark"><i class="bi bi-flower3"></i></span>
+                <x-brand-mark />
                 <div><div class="fw-bold">Rice Samples</div><div class="small text-muted">{{ auth()->user()->name }} · {{ auth()->user()->role->label() }}</div></div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
