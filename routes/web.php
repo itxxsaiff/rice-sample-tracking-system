@@ -7,7 +7,9 @@ use App\Http\Controllers\LoadingController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\MillController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\RiceVarietyController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SampleBundleController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\SampleDispatchController;
@@ -23,6 +25,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('search', SearchController::class)->name('search');
+    Route::get('records', [RecordsController::class, 'index'])->name('records.index');
 
     Route::get('account', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('account', [ProfileController::class, 'update'])->name('profile.update');

@@ -32,6 +32,11 @@
                 <button class="btn btn-light btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
             @endif
             <h1 class="topbar-title flex-grow-1"><span class="d-lg-none">{{ $title ?? config('app.name') }}</span></h1>
+            <form method="GET" action="{{ route('search') }}" class="d-none d-lg-block search-input" role="search" style="width:340px">
+                <i class="bi bi-search"></i>
+                <input type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}" class="form-control" placeholder="Search samples, buyers, mills, trucks…" aria-label="Search all records">
+            </form>
+            <a href="{{ route('search') }}" class="btn btn-light btn-icon d-lg-none" aria-label="Search"><i class="bi bi-search"></i></a>
             @if (Route::has('samples.create'))
                 <a href="{{ route('samples.create') }}" class="btn btn-primary d-none d-lg-inline-flex"><i class="bi bi-plus-lg me-1"></i> Add Sample</a>
             @endif

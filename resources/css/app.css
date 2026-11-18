@@ -435,3 +435,6 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); colo
 }
 .response-option { display: flex; flex-direction: column; align-items: flex-start; border-width: 2px; transition: border-color .15s, box-shadow .15s; }
 .response-option.selected { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(var(--brand-rgb), .12); background: #fbfdfc; }
+.cell-title.mono, td .mono { white-space: nowrap; }
+.list-group-item-action { color: var(--ink); }
+.list-group-item-action:hover, .list-group-item-action:focus { color: var(--ink); background: #f6f9f7; }

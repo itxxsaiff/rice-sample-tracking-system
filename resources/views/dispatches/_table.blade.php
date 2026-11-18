@@ -30,7 +30,7 @@
                 @unless ($hideBuyer)
                     <td class="hide-mobile"><div class="fw-medium">{{ $dispatch->buyer->name }}</div><div class="cell-sub">{{ $dispatch->buyer->city }}</div></td>
                 @endunless
-                <td data-label="Sent"><span>{{ $dispatch->dispatch_date->format('d M Y') }}</span></td>
+                <td data-label="Sent" class="text-nowrap"><span>{{ $dispatch->dispatch_date->format('d M Y') }}</span></td>
                 <td class="hide-mobile"><x-status-badge :status="$dispatch->stageKey()" /></td>
                 <td data-label="Agreed">
                     <span>
