@@ -40,6 +40,24 @@ class Activity extends Model
         return $this->morphTo();
     }
 
+    /** Link to the record this activity is about (null if it no longer exists). */
+    public function subjectUrl(): ?string
+    {
+        if (! $this->subject) {
+            return null;
+        }
+
+        return match ($this->subject_type) {
+            'mill' => route('mills.show', $this->subject_id),
+            'buyer' => route('buyers.show', $this->subject_id),
+            'sample' => route('samples.show', $this->subject_id),
+            'bundle' => route('bundles.show', $this->subject_id),
+            'dispatch' => route('dispatches.show', $this->subject_id),
+            'loading' => route('loadings.show', $this->subject_id),
+            default => null,
+        };
+    }
+
     /** Bootstrap icon + tone for the activity feed. */
     public function icon(): array
     {
