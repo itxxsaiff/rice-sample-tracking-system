@@ -27,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
         // Short, stable names in polymorphic columns (activities.subject_type).
         Relation::enforceMorphMap([
             'mill' => \App\Models\Mill::class,
+            'buyer' => \App\Models\Buyer::class,
         ]);
 
         // Catch N+1 queries and silently discarded attributes during development.

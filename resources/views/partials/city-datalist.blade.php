@@ -1,5 +1,5 @@
 <datalist id="citySuggestions">
-    @foreach (\App\Models\Mill::citySuggestions() as $city)
+    @foreach (\App\Support\Cities::suggestions() as $city)
         <option value="{{ $city }}"></option>
     @endforeach
 </datalist>

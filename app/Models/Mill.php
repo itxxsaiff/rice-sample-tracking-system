@@ -44,12 +44,4 @@ class Mill extends Model
     {
         return "{$this->name}, {$this->city}";
     }
-
-    /** Distinct cities already used, merged with configured suggestions. */
-    public static function citySuggestions(): array
-    {
-        return collect(config('rice.cities'))
-            ->merge(static::query()->distinct()->pluck('city'))
-            ->map(fn ($c) => trim($c))->unique(fn ($c) => mb_strtolower($c))->sort()->values()->all();
-    }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\MillController;
@@ -23,9 +24,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('account/password', [ProfileController::class, 'password'])->name('profile.password');
 
     Route::resource('mills', MillController::class);
+    Route::resource('buyers', BuyerController::class);
 
     Route::prefix('lookup')->name('lookup.')->group(function () {
         Route::get('mills', [LookupController::class, 'mills'])->name('mills');
+        Route::get('buyers', [LookupController::class, 'buyers'])->name('buyers');
     });
 
     Route::prefix('settings')->middleware('admin')->group(function () {
