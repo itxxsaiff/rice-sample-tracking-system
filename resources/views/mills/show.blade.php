@@ -3,7 +3,7 @@
         <div class="card-body">
             <div class="d-flex flex-wrap gap-3 align-items-start justify-content-between">
                 <div class="d-flex gap-3 align-items-center min-w-0">
-                    <span class="stat-icon tone-green"><i class="bi bi-buildings"></i></span>
+                    <span class="stat-icon tone-navy"><i class="bi bi-buildings"></i></span>
                     <div class="min-w-0">
                         <h1 class="h4 fw-bold mb-0">{{ $mill->name }}</h1>
                         <div class="text-muted"><i class="bi bi-geo-alt"></i> {{ $mill->city }}</div>
@@ -31,7 +31,7 @@
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-4"><x-stat-card label="Samples" :value="$stats['samples']" icon="basket" /></div>
+        <div class="col-4"><x-stat-card label="Samples" :value="$stats['samples']" icon="basket" tone="navy" /></div>
         <div class="col-4"><x-stat-card label="Varieties" :value="$stats['varieties']" icon="tags" tone="gold" /></div>
         <div class="col-4"><x-stat-card label="Last collected" :value="$stats['last_collected'] ? \Illuminate\Support\Carbon::parse($stats['last_collected'])->format('d M') : '—'" icon="calendar-event" tone="blue" /></div>
     </div>

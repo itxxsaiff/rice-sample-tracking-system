@@ -13,7 +13,7 @@
     {{-- Quick actions (big touch targets, mostly for phones) --}}
     <div class="row g-2 g-md-3 mb-4 d-md-none">
         @foreach ([
-            [route('samples.create'), 'Add sample', 'basket', 'green'],
+            [route('samples.create'), 'Add sample', 'basket', 'navy'],
             [route('bundles.create'), 'New bundle', 'boxes', 'gold'],
             [route('dispatches.create'), 'Dispatch', 'send', 'blue'],
             [route('loading.index'), 'Loading', 'truck', 'teal'],
@@ -23,6 +23,14 @@
             </div>
         @endforeach
     </div>
+
+    @if ($stats['samples'] === 0)
+        <div class="empty-panel mb-4">
+            <x-empty-state icon="box-seam" title="No samples registered yet" text="All counters on this dashboard come from your live records. Register your first rice sample from a mill to begin tracking.">
+                <a href="{{ route('samples.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Register first sample</a>
+            </x-empty-state>
+        </div>
+    @endif
 
     <div class="small-caps mb-2">Needs attention</div>
     <div class="row g-3 mb-4">
@@ -34,7 +42,7 @@
 
     <div class="small-caps mb-2">Records</div>
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-4 col-xl"><x-stat-card label="Samples" :value="$stats['samples']" icon="basket" :href="route('samples.index')" /></div>
+        <div class="col-6 col-md-4 col-xl"><x-stat-card label="Samples" :value="$stats['samples']" icon="basket" tone="navy" :href="route('samples.index')" /></div>
         <div class="col-6 col-md-4 col-xl"><x-stat-card label="Dispatches" :value="$stats['dispatches']" icon="send" tone="blue" :href="route('dispatches.index')" /></div>
         <div class="col-6 col-md-4 col-xl"><x-stat-card label="Rejected" :value="$stats['rejected']" icon="x-circle" tone="red" :href="route('dispatches.index', ['status' => 'rejected'])" /></div>
         <div class="col-6 col-md-6 col-xl"><x-stat-card label="Rice mills" :value="$stats['mills']" icon="buildings" tone="slate" :href="route('mills.index')" /></div>

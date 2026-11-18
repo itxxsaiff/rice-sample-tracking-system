@@ -15,7 +15,7 @@
             <span class="avatar">{{ auth()->user()->initials() }}</span>
             <div class="flex-grow-1 min-w-0">
                 <div class="text-white fw-semibold small text-truncate">{{ auth()->user()->name }}</div>
-                <div class="small text-truncate" style="color:#8fb19f">{{ auth()->user()->role->label() }}</div>
+                <div class="small text-truncate" style="color:var(--sidebar-muted)">{{ auth()->user()->role->label() }}</div>
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -105,7 +105,7 @@
         </div>
         <div class="list-group list-group-flush pb-2">
             @foreach ([
-                ['samples.create', 'Add sample', 'Record a sample collected at a mill', 'basket', 'green'],
+                ['samples.create', 'Add sample', 'Record a sample collected at a mill', 'basket', 'navy'],
                 ['bundles.create', 'New bundle', 'Add several samples together', 'boxes', 'gold'],
                 ['dispatches.create', 'Dispatch samples', 'Send samples to buyers', 'send', 'blue'],
                 ['loading.index', 'Record loading', 'Trucks, quantities and photos', 'truck', 'teal'],

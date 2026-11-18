@@ -5,7 +5,7 @@
                 <div class="card-body">
                     <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start">
                         <div class="d-flex gap-3 align-items-center min-w-0">
-                            <span class="stat-icon tone-green"><i class="bi bi-basket"></i></span>
+                            <span class="stat-icon tone-navy"><i class="bi bi-basket"></i></span>
                             <div class="min-w-0">
                                 <div class="small-caps">Sample</div>
                                 <h1 class="h4 fw-bold mb-0 mono">{{ $sample->sample_number }}</h1>

@@ -32,7 +32,7 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3"><x-stat-card label="Awaiting response" :value="$counts['pending'] ?? 0" icon="hourglass-split" tone="gold" :href="route('buyers.show', [$buyer, 'status' => 'pending'])" /></div>
-        <div class="col-6 col-md-3"><x-stat-card label="Confirmed" :value="$counts['confirmed'] ?? 0" icon="check-circle" :href="route('buyers.show', [$buyer, 'status' => 'confirmed'])" /></div>
+        <div class="col-6 col-md-3"><x-stat-card label="Confirmed" :value="$counts['confirmed'] ?? 0" icon="check-circle" tone="green" :href="route('buyers.show', [$buyer, 'status' => 'confirmed'])" /></div>
         <div class="col-6 col-md-3"><x-stat-card label="Rejected" :value="$counts['rejected'] ?? 0" icon="x-circle" tone="red" :href="route('buyers.show', [$buyer, 'status' => 'rejected'])" /></div>
         <div class="col-6 col-md-3"><x-stat-card label="Completed orders" :value="$counts['completed'] ?? 0" icon="check2-all" tone="teal" :href="route('buyers.show', [$buyer, 'status' => 'completed'])" /></div>
     </div>

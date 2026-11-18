@@ -19,7 +19,7 @@
                         <div class="list-group list-group-flush">
                             @foreach ($items as [$url, $title, $sub, $icon])
                                 <a href="{{ $url }}" class="list-group-item list-group-item-action d-flex gap-3 align-items-center py-3">
-                                    <span class="stat-icon tone-green flex-shrink-0" style="width:36px;height:36px;font-size:1rem"><i class="bi bi-{{ $icon }}"></i></span>
+                                    <span class="stat-icon tone-navy flex-shrink-0" style="width:36px;height:36px;font-size:1rem"><i class="bi bi-{{ $icon }}"></i></span>
                                     <span class="min-w-0"><span class="d-block fw-medium text-truncate">{{ $title }}</span><span class="small text-muted">{{ $sub }}</span></span>
                                 </a>
                             @endforeach
