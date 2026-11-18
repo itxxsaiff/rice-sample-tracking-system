@@ -68,6 +68,22 @@ function applyToScope(scope, item, kind) {
         return;
     }
 
+    // Checkbox list targets (buyers on the dispatch form): add a pre-ticked entry.
+    if (kind === 'buyer') {
+        const list = document.querySelector('[data-choice-group="buyers"]');
+        if (!list) return;
+        const label = document.createElement('label');
+        label.className = 'choice-item checked';
+        label.innerHTML = `<input class="form-check-input" type="checkbox" name="buyer_ids[]" checked>
+            <span class="min-w-0"><span class="d-block fw-medium text-truncate"></span><span class="small text-muted"></span></span>`;
+        label.querySelector('input').value = item.id;
+        label.querySelector('.fw-medium').textContent = item.label;
+        label.querySelector('.small').textContent = item.sub || '';
+        list.prepend(label);
+        label.querySelector('input').dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+    }
+
     const picker = scope?.querySelector('[data-picker]');
     if (picker) picker.dispatchEvent(new CustomEvent('picker:set', { detail: item }));
 }

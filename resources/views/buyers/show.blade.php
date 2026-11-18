@@ -29,4 +29,29 @@
             </dl>
         </div>
     </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><x-stat-card label="Awaiting response" :value="$counts['pending'] ?? 0" icon="hourglass-split" tone="gold" :href="route('buyers.show', [$buyer, 'status' => 'pending'])" /></div>
+        <div class="col-6 col-md-3"><x-stat-card label="Confirmed" :value="$counts['confirmed'] ?? 0" icon="check-circle" :href="route('buyers.show', [$buyer, 'status' => 'confirmed'])" /></div>
+        <div class="col-6 col-md-3"><x-stat-card label="Rejected" :value="$counts['rejected'] ?? 0" icon="x-circle" tone="red" :href="route('buyers.show', [$buyer, 'status' => 'rejected'])" /></div>
+        <div class="col-6 col-md-3"><x-stat-card label="Completed orders" :value="$counts['completed'] ?? 0" icon="check2-all" tone="teal" :href="route('buyers.show', [$buyer, 'status' => 'completed'])" /></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header justify-content-between">
+            <h2>Dispatch &amp; order history</h2>
+            <a href="{{ route('dispatches.create', ['buyer_ids' => [$buyer->id]]) }}" class="btn btn-sm btn-primary text-nowrap"><i class="bi bi-send"></i> Send samples</a>
+        </div>
+        <nav class="nav-tabs-pills" aria-label="Filter by status">
+            @foreach ([null => 'All', 'pending' => 'Pending', 'confirmed' => 'Confirmed', 'rejected' => 'Rejected', 'completed' => 'Completed'] as $key => $label)
+                <a href="{{ route('buyers.show', [$buyer, 'status' => $key ?: null]) }}" @class(['active' => $status === ($key ?: null)])>{{ $label }}<span class="count">{{ $counts[$key ?: 'all'] ?? 0 }}</span></a>
+            @endforeach
+        </nav>
+        @if ($dispatches->isEmpty())
+            <x-empty-state icon="send" :title="$status ? 'Nothing in this list' : 'No samples sent to this buyer yet'" />
+        @else
+            @include('dispatches._table', ['dispatches' => $dispatches, 'hideBuyer' => true])
+            @if ($dispatches->hasPages())<div class="card-footer">{{ $dispatches->links() }}</div>@endif
+        @endif
+    </div>
 </x-layouts.app>

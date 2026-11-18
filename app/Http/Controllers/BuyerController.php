@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Buyers\BuyerRequest;
+use App\Enums\LoadingStatus;
 use App\Models\Buyer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,11 +49,24 @@ class BuyerController extends Controller
         return redirect()->route('buyers.show', $buyer)->with('success', "{$buyer->name} has been added.");
     }
 
-    public function show(Buyer $buyer): View
+    public function show(Request $request, Buyer $buyer): View
     {
         $this->authorize('view', $buyer);
 
-        return view('buyers.show', compact('buyer'));
+        $status = in_array($request->input('status'), ['pending', 'confirmed', 'rejected', 'completed'], true) ? $request->input('status') : null;
+
+        $dispatches = $buyer->dispatches()
+            ->with(['sample:id,sample_number,mill_id,rice_variety_id,photo_path', 'sample.mill:id,name,city', 'sample.variety:id,name'])
+            ->when($status === 'completed', fn ($q) => $q->where('loading_status', LoadingStatus::Completed))
+            ->when($status && $status !== 'completed', fn ($q) => $q->where('status', $status))
+            ->latest('dispatch_date')->latest('id')
+            ->paginate(15)->withQueryString();
+
+        $counts = $buyer->dispatches()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $counts['completed'] = $buyer->dispatches()->where('loading_status', LoadingStatus::Completed)->count();
+        $counts['all'] = $counts->only(['pending', 'confirmed', 'rejected'])->sum();
+
+        return view('buyers.show', compact('buyer', 'dispatches', 'counts', 'status'));
     }
 
     public function edit(Buyer $buyer): View

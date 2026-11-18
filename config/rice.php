@@ -16,20 +16,20 @@ return [
         'pouch' => 'Pouches',
     ],
 
-    // Units for confirmed purchase and actual loaded quantities.
+    // Units for confirmed purchase and actual loaded quantities (1 maund = 40 kg).
     'quantity_units' => [
-        'maund' => 'Maund (40 kg)',
-        'kg' => 'Kilograms (kg)',
-        'ton' => 'Metric tons',
+        'maund' => 'Maund',
+        'kg' => 'Kg',
+        'ton' => 'Ton',
         'bag' => 'Bags',
     ],
 
     // What the agreed rate is quoted against.
     'rate_units' => [
-        'per_maund' => 'per Maund (40 kg)',
-        'per_kg' => 'per kg',
-        'per_ton' => 'per Ton',
-        'per_bag' => 'per Bag',
+        'per_maund' => '/ Maund',
+        'per_kg' => '/ Kg',
+        'per_ton' => '/ Ton',
+        'per_bag' => '/ Bag',
     ],
 
     'packing_types' => [

@@ -11,7 +11,7 @@
                     </div>
                 </div>
                 <div class="page-actions">
-                    @if (Route::has('dispatches.create') && $bundle->samples->isNotEmpty())
+                    @if ($bundle->samples->isNotEmpty())
                         <a href="{{ route('dispatches.create', ['sample_ids' => $bundle->samples->pluck('id')->all()]) }}" class="btn btn-primary"><i class="bi bi-send"></i> Dispatch samples</a>
                     @endif
                     <a href="{{ route('bundles.samples.create', $bundle) }}" class="btn btn-soft"><i class="bi bi-plus-lg"></i> Add samples</a>

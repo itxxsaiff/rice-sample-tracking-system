@@ -23,10 +23,11 @@ class SampleController extends Controller
     {
         $this->authorize('viewAny', Sample::class);
 
-        $filters = $request->only(['q', 'mill_id', 'variety_id', 'bundle_id', 'city', 'from', 'to']);
+        $filters = $request->only(['q', 'mill_id', 'variety_id', 'bundle_id', 'city', 'from', 'to', 'sent']);
 
         $samples = Sample::query()
             ->with(['mill:id,name,city', 'variety:id,name', 'bundle:id,bundle_number'])
+            ->withCount('dispatches')
             ->filter($filters)
             ->latest('collection_date')->latest('id')
             ->paginate(25)->withQueryString();
@@ -71,7 +72,7 @@ class SampleController extends Controller
     {
         $this->authorize('view', $sample);
 
-        $sample->load(['mill', 'variety', 'bundle', 'creator', 'activities.user']);
+        $sample->load(['mill', 'variety', 'bundle', 'creator', 'activities.user', 'dispatches' => fn ($q) => $q->with('buyer:id,name,city')->latest('dispatch_date')->latest('id')]);
 
         return view('samples.show', compact('sample'));
     }

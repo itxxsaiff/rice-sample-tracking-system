@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiceVarietyController;
 use App\Http\Controllers\SampleBundleController;
 use App\Http\Controllers\SampleController;
+use App\Http\Controllers\SampleDispatchController;
 use App\Http\Controllers\Settings\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('bundles/{bundle}/samples', [SampleBundleController::class, 'storeSamples'])->name('bundles.samples.store');
     Route::resource('bundles', SampleBundleController::class)->parameters(['bundles' => 'bundle']);
 
+    Route::get('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respondForm'])->name('dispatches.respond');
+    Route::put('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respond'])->name('dispatches.respond.update');
+    Route::patch('dispatches/{dispatch}/reopen', [SampleDispatchController::class, 'reopen'])->name('dispatches.reopen');
+    Route::resource('dispatches', SampleDispatchController::class)->except(['edit', 'update']);
+
     Route::resource('mills', MillController::class);
     Route::resource('buyers', BuyerController::class);
     Route::resource('varieties', RiceVarietyController::class)->except(['show', 'create'])
@@ -40,6 +46,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::prefix('lookup')->name('lookup.')->group(function () {
         Route::get('mills', [LookupController::class, 'mills'])->name('mills');
         Route::get('buyers', [LookupController::class, 'buyers'])->name('buyers');
+        Route::get('samples', [LookupController::class, 'samples'])->name('samples');
     });
 
     Route::prefix('settings')->middleware('admin')->group(function () {

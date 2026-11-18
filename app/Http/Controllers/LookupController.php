@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Buyer;
 use App\Models\Mill;
+use App\Models\Sample;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,6 +32,19 @@ class LookupController extends Controller
 
         return response()->json([
             'data' => $buyers->map(fn (Buyer $b) => ['id' => $b->id, 'label' => $b->name, 'sub' => $b->city]),
+        ]);
+    }
+
+    public function samples(Request $request): JsonResponse
+    {
+        $samples = Sample::query()
+            ->with(['mill:id,name,city', 'variety:id,name'])
+            ->filter(['q' => $request->input('q')])
+            ->latest('collection_date')->latest('id')
+            ->limit(self::LIMIT)->get();
+
+        return response()->json([
+            'data' => $samples->map(fn (Sample $s) => SampleDispatchController::sampleOption($s)),
         ]);
     }
 }

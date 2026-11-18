@@ -12,9 +12,7 @@
                             </div>
                         </div>
                         <div class="page-actions">
-                            @if (Route::has('dispatches.create'))
-                                <a href="{{ route('dispatches.create', ['sample_ids' => [$sample->id]]) }}" class="btn btn-primary"><i class="bi bi-send"></i> Dispatch</a>
-                            @endif
+                            <a href="{{ route('dispatches.create', ['sample_ids' => [$sample->id]]) }}" class="btn btn-primary"><i class="bi bi-send"></i> Dispatch</a>
                             <a href="{{ route('samples.edit', $sample) }}" class="btn btn-light"><i class="bi bi-pencil"></i> Edit</a>
                             @can('delete', $sample)
                                 <form method="POST" action="{{ route('samples.destroy', $sample) }}" data-confirm="Sample {{ $sample->sample_number }} has not been dispatched and will be permanently deleted." data-confirm-title="Delete sample?" data-confirm-button="Delete">
@@ -36,6 +34,17 @@
                         @if ($sample->notes)<div style="grid-column: 1 / -1"><dt>Notes</dt><dd class="fw-normal">{!! nl2br(e($sample->notes)) !!}</dd></div>@endif
                     </dl>
                 </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header justify-content-between">
+                    <h2>Dispatched to buyers <span class="badge rounded-pill text-bg-light border ms-1">{{ $sample->dispatches->count() }}</span></h2>
+                    <a href="{{ route('dispatches.create', ['sample_ids' => [$sample->id]]) }}" class="btn btn-sm btn-soft text-nowrap"><i class="bi bi-send"></i> Send to buyer</a>
+                </div>
+                @if ($sample->dispatches->isEmpty())
+                    <x-empty-state icon="send" title="Not sent to any buyer yet" text="One sample can be sent to several buyers; each response is tracked separately." />
+                @else
+                    @include('dispatches._table', ['dispatches' => $sample->dispatches->each->setRelation('sample', $sample), 'hideSample' => true])
+                @endif
             </div>
             @stack('sample-sections')
         </div>
