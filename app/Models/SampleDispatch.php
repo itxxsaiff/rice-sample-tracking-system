@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SampleDispatch extends Model
 {
@@ -73,10 +74,61 @@ class SampleDispatch extends Model
         return ! $this->isPending();
     }
 
+    public function loadings(): HasMany
+    {
+        return $this->hasMany(Loading::class)->orderBy('loading_date')->orderBy('id');
+    }
+
     /** Whether any truck loading has been recorded against this order. */
     public function hasLoadings(): bool
     {
-        return false;
+        return $this->relationLoaded('loadings') ? $this->loadings->isNotEmpty() : $this->loadings()->exists();
+    }
+
+    public function isLoadingCompleted(): bool
+    {
+        return $this->loading_status === LoadingStatus::Completed;
+    }
+
+    /** Can more trucks be recorded? Only for confirmed orders that are not closed. */
+    public function acceptsLoadings(): bool
+    {
+        return $this->isConfirmed() && ! $this->isLoadingCompleted();
+    }
+
+    /**
+     * Total loaded per unit, e.g. ['maund' => 450.0].
+     *
+     * @return array<string, float>
+     */
+    public function loadedTotals(): array
+    {
+        return $this->loadings->groupBy('quantity_unit')
+            ->map(fn ($rows) => (float) $rows->sum('quantity'))->all();
+    }
+
+    /** Loaded share of the confirmed quantity (same unit only), 0–100, or null if not comparable. */
+    public function loadedPercent(): ?int
+    {
+        $confirmed = (float) $this->confirmed_quantity;
+        $loaded = $this->loadedTotals()[$this->confirmed_quantity_unit] ?? null;
+
+        if ($confirmed <= 0 || $loaded === null) {
+            return $this->hasLoadings() ? null : 0;
+        }
+
+        return (int) min(100, round($loaded / $confirmed * 100));
+    }
+
+    public function remainingQuantity(): ?float
+    {
+        if (! $this->confirmed_quantity) {
+            return null;
+        }
+
+        $remaining = (float) $this->confirmed_quantity - ($this->loadedTotals()[$this->confirmed_quantity_unit] ?? 0);
+
+        return $remaining > 0 ? round($remaining, 2) : null;
     }
 
     public function confirmedQuantityLabel(): ?string
