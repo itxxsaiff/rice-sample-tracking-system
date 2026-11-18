@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Settings\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -18,4 +19,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('account', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('account', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('account/password', [ProfileController::class, 'password'])->name('profile.password');
+
+    Route::prefix('settings')->middleware('admin')->group(function () {
+        Route::resource('users', UserController::class)->except(['show', 'destroy']);
+        Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+    });
 });
