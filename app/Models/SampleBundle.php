@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\Syncable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SampleBundle extends Model
 {
-    use HasFactory, RecordsActivity;
+    use HasFactory, RecordsActivity, Syncable;
 
     protected $fillable = ['bundle_number', 'bundle_date', 'notes'];
 

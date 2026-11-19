@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\TruckLoadingStatus;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\Syncable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Loading extends Model
 {
-    use HasFactory, RecordsActivity;
+    use HasFactory, RecordsActivity, Syncable;
 
     protected $fillable = [
         'truck_number', 'loading_date', 'quantity', 'quantity_unit', 'bag_count',

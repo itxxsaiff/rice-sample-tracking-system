@@ -2,11 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Syncable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoadingPhoto extends Model
 {
+    use Syncable;
+
+    /** Photos are immutable; no version column. */
+    protected bool $versioned = false;
+
     protected $fillable = ['path', 'original_name', 'mime', 'size'];
 
     public function loading(): BelongsTo

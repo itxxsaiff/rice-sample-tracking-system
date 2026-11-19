@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\DispatchStatus;
 use App\Enums\LoadingStatus;
 use App\Models\Concerns\RecordsActivity;
+use App\Models\Concerns\Syncable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SampleDispatch extends Model
 {
-    use HasFactory, RecordsActivity;
+    use HasFactory, RecordsActivity, Syncable;
 
     protected $fillable = ['sample_id', 'buyer_id', 'dispatch_date', 'notes'];
 
