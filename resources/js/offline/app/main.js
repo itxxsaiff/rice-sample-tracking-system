@@ -3,6 +3,7 @@ import { openDb } from '../db';
 import { readActiveUser } from '../session';
 import { getState, isLocked, startSyncTriggers } from '../sync';
 import { loadContext } from './store';
+import { toast } from '../../modules/ui';
 import { h } from './util';
 import { directoryForm, directoryList, directoryShow } from './views/directory';
 import { home } from './views/home';
@@ -152,6 +153,11 @@ export async function bootOfflineApp() {
     startSyncTriggers();
     mountIndicator();
     onlineBanner();
+    try {
+        const flash = sessionStorage.getItem('rst.flash');
+        if (flash) { sessionStorage.removeItem('rst.flash'); setTimeout(() => toast(flash, 'info'), 300); }
+    } catch { /* ignore */ }
+
     await render().catch((e) => {
         root.innerHTML = `<div class="alert alert-danger">This screen could not be opened offline: ${h(e.message)}</div>`;
     });

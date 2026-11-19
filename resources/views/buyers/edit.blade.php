@@ -1,6 +1,6 @@
 <x-layouts.app :title="'Edit '.$buyer->name" :back="route('buyers.show', $buyer)" action-bar>
     <x-page-header :title="'Edit '.$buyer->name" />
-    <form method="POST" action="{{ route('buyers.update', $buyer) }}" class="card" novalidate>
+    <form method="POST" action="{{ route('buyers.update', $buyer) }}" data-offline-op="buyer.update" data-offline-target="{{ $buyer->uuid }}" data-offline-version="{{ $buyer->version }}" class="card" novalidate>
         @csrf @method('PUT')
         @include('buyers._form')
         <div class="action-bar">

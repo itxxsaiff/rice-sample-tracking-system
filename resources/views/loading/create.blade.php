@@ -1,6 +1,6 @@
 <x-layouts.app title="Record Loading" :back="route('dispatches.show', $dispatch)" action-bar>
     <x-page-header title="Record Truck Loading" :subtitle="$dispatch->buyer->name.' · '.$dispatch->dispatch_number" />
-    <form method="POST" action="{{ route('loadings.store', $dispatch) }}" enctype="multipart/form-data" class="card" novalidate>
+    <form method="POST" action="{{ route('loadings.store', $dispatch) }}" data-offline-op="loading.create" data-offline-target="{{ $dispatch->uuid }}" enctype="multipart/form-data" class="card" novalidate>
         @csrf
         @include('loading._form')
         <div class="form-section">

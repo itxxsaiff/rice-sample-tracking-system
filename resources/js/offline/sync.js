@@ -25,6 +25,7 @@ let running = null;
 let state = { phase: 'idle', pending: 0, failed: 0, conflicts: 0, lastSync: null, message: '', progress: null };
 let csrf = null;
 let retryTimer = null;
+let pushedCount = 0;
 
 export function getState() {
     return state;
@@ -126,6 +127,9 @@ async function run(doPull) {
         } catch { /* a failed download never affects pending changes */ }
     }
 
+    if (pushedCount) window.dispatchEvent(new CustomEvent('rst:synced', { detail: { count: pushedCount } }));
+    pushedCount = 0;
+
     const after = await refreshCounts(db);
     setState({ phase: phaseFor(after, pushed !== 'network'), progress: null, message: pushed === 'network' ? 'Connection lost while syncing. Will retry.' : '' });
     if (after.pending) scheduleRetry(db);
@@ -201,6 +205,7 @@ async function push(db) {
             });
             op.status = 'done';
             done++;
+            pushedCount++;
             await setMeta(db, 'failedRuns', 0);
             continue;
         }

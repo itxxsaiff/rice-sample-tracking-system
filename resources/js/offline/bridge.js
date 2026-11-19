@@ -1,3 +1,4 @@
+import { initFormCapture } from './capture';
 import { deleteUserDb, openDb } from './db';
 import { mountIndicator } from './indicator';
 import { clearActiveUser, confirmPageUser, pageUser, readActiveUser } from './session';
@@ -61,4 +62,5 @@ export function initOfflineBridge() {
     startSyncTriggers();
     mountIndicator();
     guardLogout();
+    initFormCapture();
 }

@@ -6,7 +6,7 @@
 <x-layouts.app :title="($editing ? 'Edit response · ' : 'Buyer response · ').$dispatch->dispatch_number" :back="route('dispatches.show', $dispatch)" action-bar>
     <x-page-header :title="$editing ? 'Edit buyer response' : 'Record buyer response'" :subtitle="'Dispatch '.$dispatch->dispatch_number" />
 
-    <form method="POST" action="{{ route('dispatches.respond.update', $dispatch) }}" class="card" data-response-form novalidate>
+    <form method="POST" action="{{ route('dispatches.respond.update', $dispatch) }}" data-offline-op="dispatch.respond" data-offline-target="{{ $dispatch->uuid }}" data-offline-version="{{ $dispatch->version }}" class="card" data-response-form novalidate>
         @csrf @method('PUT')
         <div class="form-section">
             @include('dispatches._sample-summary')

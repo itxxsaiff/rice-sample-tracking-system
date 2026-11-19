@@ -169,6 +169,11 @@ async function onPanelClick(e) {
     renderPanel();
 }
 
+// Confirmation only once the server has really accepted the changes.
+window.addEventListener('rst:synced', (e) => {
+    import('../modules/ui').then(({ toast }) => toast(`${e.detail.count} change${e.detail.count > 1 ? 's' : ''} synced with the server.`, 'success'));
+});
+
 export function mountIndicator() {
     const targets = document.querySelectorAll('[data-sync-indicator]');
     if (!targets.length) return;

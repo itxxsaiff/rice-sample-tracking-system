@@ -4,7 +4,7 @@
             <a href="{{ route('bundles.create') }}" class="btn btn-light"><i class="bi bi-boxes me-1"></i> Add several as a bundle</a>
         </x-slot:actions>
     </x-page-header>
-    <form method="POST" action="{{ route('samples.store') }}" enctype="multipart/form-data" class="card" novalidate>
+    <form method="POST" action="{{ route('samples.store') }}" data-offline-op="sample.create" enctype="multipart/form-data" class="card" novalidate>
         @csrf
         @include('samples._form')
         <div class="action-bar">

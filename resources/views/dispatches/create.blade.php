@@ -1,7 +1,7 @@
 <x-layouts.app title="Dispatch Samples" :back="route('dispatches.index')" action-bar>
     <x-page-header title="Dispatch Samples" subtitle="Send one or more samples to one or more buyers. A separate dispatch is recorded for every sample–buyer pair." />
 
-    <form method="POST" action="{{ route('dispatches.store') }}" novalidate>
+    <form method="POST" action="{{ route('dispatches.store') }}" data-offline-op="dispatch.create" novalidate>
         @csrf
         <div class="row g-4">
             <div class="col-lg-6">

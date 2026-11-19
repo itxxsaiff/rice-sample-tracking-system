@@ -1,6 +1,6 @@
 <x-layouts.app title="Add Rice Mill" :back="route('mills.index')" action-bar>
     <x-page-header title="Add Rice Mill" subtitle="Each mill has one permanent profile. All its samples are kept under it." />
-    <form method="POST" action="{{ route('mills.store') }}" class="card" novalidate>
+    <form method="POST" action="{{ route('mills.store') }}" data-offline-op="mill.create" class="card" novalidate>
         @csrf
         @include('mills._form')
         <div class="action-bar">

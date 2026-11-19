@@ -76,10 +76,12 @@ export function isReachable() {
     return !['offline', 'idle'].includes(getState().phase);
 }
 
-/** Honest feedback: never claim the server has it when it is only on the device. */
+/**
+ * Honest feedback: a save is only ever "on this device" until the server
+ * confirms it (the sync engine then announces "synced with the server").
+ */
 export function savedToast(what) {
-    const online = isReachable() && navigator.onLine !== false;
-    toast(online ? `${what} saved — sending to the server now.` : `${what} saved on this device. It will sync when the internet returns.`, online ? 'success' : 'info');
+    toast(`${what} saved on this device. It will sync automatically when the internet is available.`, 'info');
 }
 
 export function go(hash) {

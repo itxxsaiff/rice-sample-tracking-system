@@ -1,6 +1,6 @@
 <x-layouts.app title="New Bundle" :back="route('bundles.index')" action-bar>
     <x-page-header title="New Sample Bundle" subtitle="Record several samples received together. Each one stays linked to its own mill." />
-    <form method="POST" action="{{ route('bundles.store') }}" enctype="multipart/form-data" novalidate>
+    <form method="POST" action="{{ route('bundles.store') }}" data-offline-op="bundle.create" enctype="multipart/form-data" novalidate>
         @csrf
         @if ($errors->any())
             <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-1"></i> Please fix the highlighted fields. Any photos need to be selected again.</div>
