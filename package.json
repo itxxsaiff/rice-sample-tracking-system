@@ -4,11 +4,13 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:browser": "node tests/browser/offline-workflow.mjs && node tests/browser/sync-edge-cases.mjs"
     },
     "devDependencies": {
         "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^3.1",
+        "puppeteer-core": "^23.11.1",
         "vite": "^8.0.0"
     },
     "optionalDependencies": {

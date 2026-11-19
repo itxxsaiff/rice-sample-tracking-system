@@ -43,7 +43,7 @@
     <div class="app-main">
         <header class="app-topbar">
             <a href="#/" class="btn btn-light btn-icon d-lg-none" data-back aria-label="Back"><i class="bi bi-chevron-left"></i></a>
-            <h1 class="topbar-title flex-grow-1"><span data-page-title>Rice Samples</span></h1>
+            <h1 class="topbar-title flex-grow-1"><span class="d-lg-none" data-page-title>Rice Samples</span></h1>
             <div data-sync-indicator></div>
         </header>
         <main class="app-content mx-auto" id="offline-root">
