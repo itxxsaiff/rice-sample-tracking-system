@@ -30,11 +30,12 @@ class DispatchService
     /**
      * Create one independent dispatch per (sample, buyer) pair.
      *
+     * @param  array<string, string>  $uuids  optional "sampleId:buyerId" => uuid (from the offline app)
      * @return Collection<int, SampleDispatch>
      */
-    public function dispatch(array $sampleIds, array $buyerIds, string $date, ?string $notes, User $user): Collection
+    public function dispatch(array $sampleIds, array $buyerIds, string $date, ?string $notes, User $user, array $uuids = []): Collection
     {
-        return DB::transaction(function () use ($sampleIds, $buyerIds, $date, $notes, $user) {
+        return DB::transaction(function () use ($sampleIds, $buyerIds, $date, $notes, $user, $uuids) {
             $samples = Sample::with('mill')->findMany($sampleIds)->keyBy('id');
             $buyers = Buyer::findMany($buyerIds)->keyBy('id');
 
@@ -53,6 +54,9 @@ class DispatchService
                         'notes' => $notes,
                     ]);
                     $dispatch->dispatch_number = ReferenceNumber::next('dispatch', SampleDispatch::class, 'dispatch_number');
+                    if ($uuid = $uuids["{$sample->id}:{$buyer->id}"] ?? null) {
+                        $dispatch->uuid = $uuid;
+                    }
                     $dispatch->status = DispatchStatus::Pending;
                     $dispatch->created_by = $user->id;
                     $dispatch->save();

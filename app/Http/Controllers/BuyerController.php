@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\LoadingStatus;
 use App\Http\Requests\Buyers\BuyerRequest;
 use App\Models\Buyer;
+use App\Services\DirectoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,8 @@ use Illuminate\View\View;
 
 class BuyerController extends Controller
 {
+    public function __construct(private readonly DirectoryService $directory) {}
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Buyer::class);
@@ -36,10 +39,7 @@ class BuyerController extends Controller
 
     public function store(BuyerRequest $request): RedirectResponse|JsonResponse
     {
-        $buyer = new Buyer($request->validated());
-        $buyer->created_by = $request->user()->id;
-        $buyer->save();
-        $buyer->recordActivity('created', "Added buyer {$buyer->label()}");
+        $buyer = $this->directory->createBuyer($request->validated(), $request->user());
 
         // Inline "quick add" from the dispatch form.
         if ($request->expectsJson()) {
@@ -78,7 +78,7 @@ class BuyerController extends Controller
 
     public function update(BuyerRequest $request, Buyer $buyer): RedirectResponse
     {
-        $buyer->update($request->validated());
+        $this->directory->updateBuyer($buyer, $request->validated());
 
         return redirect()->route('buyers.show', $buyer)->with('success', 'Buyer details updated.');
     }

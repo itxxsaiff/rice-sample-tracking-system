@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Mills\MillRequest;
 use App\Models\Mill;
 use App\Models\RiceVariety;
+use App\Services\DirectoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,8 @@ use Illuminate\View\View;
 
 class MillController extends Controller
 {
+    public function __construct(private readonly DirectoryService $directory) {}
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Mill::class);
@@ -36,10 +39,7 @@ class MillController extends Controller
 
     public function store(MillRequest $request): RedirectResponse|JsonResponse
     {
-        $mill = new Mill($request->validated());
-        $mill->created_by = $request->user()->id;
-        $mill->save();
-        $mill->recordActivity('created', "Added rice mill {$mill->label()}");
+        $mill = $this->directory->createMill($request->validated(), $request->user());
 
         // Inline "quick add" from the sample form.
         if ($request->expectsJson()) {
@@ -79,7 +79,7 @@ class MillController extends Controller
 
     public function update(MillRequest $request, Mill $mill): RedirectResponse
     {
-        $mill->update($request->validated());
+        $this->directory->updateMill($mill, $request->validated());
 
         return redirect()->route('mills.show', $mill)->with('success', 'Mill details updated.');
     }

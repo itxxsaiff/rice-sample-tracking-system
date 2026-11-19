@@ -40,6 +40,9 @@ class SampleService
                 'bundle_date' => $bundleData['bundle_date'],
                 'notes' => $bundleData['notes'] ?? null,
             ]);
+            if (! empty($bundleData['uuid'])) {
+                $bundle->uuid = $bundleData['uuid'];
+            }
             $bundle->created_by = $user->id;
             $bundle->save();
 
@@ -117,6 +120,9 @@ class SampleService
     {
         $sample = new Sample(collect($data)->only(['mill_id', 'rice_variety_id', 'collection_date', 'quantity', 'quantity_unit', 'notes'])->all());
         $sample->sample_number = ($data['sample_number'] ?? null) ?: ReferenceNumber::next('sample', Sample::class, 'sample_number');
+        if (! empty($data['uuid'])) {
+            $sample->uuid = $data['uuid']; // assigned on the phone when created offline
+        }
         $sample->sample_bundle_id = $bundle?->id;
         $sample->created_by = $user->id;
 

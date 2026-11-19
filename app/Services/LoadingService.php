@@ -27,9 +27,9 @@ class LoadingService
     private array $storedPaths = [];
 
     /** @param  array<int, UploadedFile>  $photos */
-    public function create(SampleDispatch $dispatch, array $data, array $photos, User $user, bool $markLoaded = false, bool $completeOrder = false): Loading
+    public function create(SampleDispatch $dispatch, array $data, array $photos, User $user, bool $markLoaded = false, bool $completeOrder = false, ?string $uuid = null): Loading
     {
-        return $this->guarded(fn () => DB::transaction(function () use ($dispatch, $data, $photos, $user, $markLoaded, $completeOrder) {
+        return $this->guarded(fn () => DB::transaction(function () use ($dispatch, $data, $photos, $user, $markLoaded, $completeOrder, $uuid) {
             $dispatch = SampleDispatch::query()->lockForUpdate()->findOrFail($dispatch->id);
 
             if (! $dispatch->isConfirmed()) {
@@ -41,6 +41,9 @@ class LoadingService
 
             $loading = new Loading($data);
             $loading->loading_number = ReferenceNumber::next('loading', Loading::class, 'loading_number');
+            if ($uuid) {
+                $loading->uuid = $uuid;
+            }
             $loading->sample_dispatch_id = $dispatch->id;
             $loading->created_by = $user->id;
             $loading->status = TruckLoadingStatus::Pending;
@@ -81,11 +84,14 @@ class LoadingService
         }));
     }
 
-    /** @param  array<int, UploadedFile>  $photos */
-    public function addPhotos(Loading $loading, array $photos, User $user): int
+    /**
+     * @param  array<int, UploadedFile>  $photos
+     * @param  array<int, string>  $uuids  optional per-photo uuids (offline uploads), same order as $photos
+     */
+    public function addPhotos(Loading $loading, array $photos, User $user, array $uuids = []): int
     {
-        return $this->guarded(fn () => DB::transaction(function () use ($loading, $photos, $user) {
-            $count = $this->attachPhotos($loading, $photos, $user);
+        return $this->guarded(fn () => DB::transaction(function () use ($loading, $photos, $user, $uuids) {
+            $count = $this->attachPhotos($loading, $photos, $user, $uuids);
             $loading->recordActivity('photos_added', "Added {$count} photo(s) to {$loading->loading_number}");
 
             return $count;
@@ -174,11 +180,11 @@ class LoadingService
     }
 
     /** @param  array<int, UploadedFile>  $photos */
-    private function attachPhotos(Loading $loading, array $photos, User $user): int
+    private function attachPhotos(Loading $loading, array $photos, User $user, array $uuids = []): int
     {
         $count = 0;
 
-        foreach ($photos as $file) {
+        foreach (array_values($photos) as $i => $file) {
             if (! $file instanceof UploadedFile) {
                 continue;
             }
@@ -191,6 +197,9 @@ class LoadingService
                 'size' => $file->getSize(),
             ]);
             $photo->uploaded_by = $user->id;
+            if (! empty($uuids[$i])) {
+                $photo->uuid = $uuids[$i];
+            }
             $loading->photos()->save($photo);
             $count++;
         }

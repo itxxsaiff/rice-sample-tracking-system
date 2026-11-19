@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Varieties\RiceVarietyRequest;
 use App\Models\RiceVariety;
+use App\Services\DirectoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class RiceVarietyController extends Controller
 {
+    public function __construct(private readonly DirectoryService $directory) {}
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', RiceVariety::class);
@@ -25,7 +28,7 @@ class RiceVarietyController extends Controller
 
     public function store(RiceVarietyRequest $request): RedirectResponse|JsonResponse
     {
-        $variety = RiceVariety::create($request->safe()->only(['name', 'description']));
+        $variety = $this->directory->createVariety($request->safe()->only(['name', 'description']));
 
         if ($request->expectsJson()) {
             return response()->json(['id' => $variety->id, 'label' => $variety->name], 201);
