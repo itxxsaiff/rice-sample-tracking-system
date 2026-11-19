@@ -33,6 +33,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::prefix('sync')->name('sync.')->middleware('throttle:240,1')->group(function () {
         Route::get('snapshot', [SyncController::class, 'snapshot'])->name('snapshot');
+        Route::post('operations', [SyncController::class, 'operation'])->name('operations');
     });
     Route::get('records', [RecordsController::class, 'index'])->name('records.index');
 
