@@ -22,6 +22,7 @@ It is **not** an ERP or accounting system. There are no payments, ledgers or inv
 | **Records** | Filterable history of dispatches, confirmations, rejections, truck loadings and completed orders |
 | **Search** | One search box across samples, dispatches, mills, buyers, bundles and trucks |
 | **Users** | Admin creates employee logins, resets passwords, deactivates accounts |
+| **Offline mode** | Installable app that keeps working without internet and syncs automatically when the connection returns (see below) |
 
 ### Workflow
 
@@ -49,6 +50,70 @@ Sample ──dispatch──▶ Dispatch (one per buyer)
 | Edit loaded trucks / reopen completed orders | ✅ | ❌ |
 
 Records with history (dispatched samples, mills with samples, buyers with dispatches, loaded trucks) cannot be deleted by anyone.
+
+---
+
+## Offline mode (PWA)
+
+The app is an installable Progressive Web App. Online it behaves exactly as before. When the server can't be reached (rice mills with no signal), the **same URLs open an offline version** that works from a copy of the data stored on the device. Changes made offline are queued and **sync automatically** when the connection returns.
+
+### What works offline
+
+| Area | Offline |
+| --- | --- |
+| Rice mills, buyers | View, search, profile with history, add, edit |
+| Samples | View, add (with camera photo), add a bundle with samples from different mills, new variety |
+| Dispatches | Send samples to one or more buyers (one record per buyer) |
+| Buyer responses | Confirm (quantity, rate, packing) or reject (reason) a pending dispatch |
+| Loading | Record trucks with photos, mark trucks loaded, complete the order |
+| Online only | Records page, global search, user management, deleting, editing an existing response, editing loaded trucks |
+
+Records not yet on the server carry a **Not synced** badge. Saving always says *"Saved on this device…"*; a separate *"N changes synced with the server"* message appears only when the server has accepted them. The device keeps the last `OFFLINE_HISTORY_DAYS` (default 365) of history plus all open work.
+
+If the connection drops while a form is open on a normal online page, **Save** offers to keep the entry on the device instead of losing it.
+
+### How it works
+
+```
+ Phone (Safari / Home Screen app)                          Laravel + MySQL
+ ┌──────────────────────────────────┐                ┌──────────────────────────────┐
+ │ Service worker  /sw.js           │  GET /sync/status   (reachability + session)   │
+ │  - caches CSS/JS/fonts/icons     │ ─────────────────▶ │                            │
+ │  - serves offline shell when     │  GET /sync/snapshot (data for offline use)     │
+ │    the server can't be reached   │ ◀───────────────── │  OfflineSnapshotService    │
+ │ IndexedDB (one DB per account)   │                    │                            │
+ │  - local copy of records         │  POST /sync/operations (one queued change)     │
+ │  - outbox of queued changes      │ ─────────────────▶ │  SyncOperationService:     │
+ │  - photo blobs until uploaded    │ ◀───────────────── │   same Form Requests,      │
+ └──────────────────────────────────┘   applied / rejected │   policies and services    │
+                                        conflict / …    │   as the online forms      │
+                                                        └──────────────────────────────┘
+```
+
+- **Stable ids.** Every record has a `uuid` (existing rows were backfilled), so a mill created offline can be used by an offline sample and an offline dispatch; the server resolves them in order.
+- **Same rules.** Each queued change is validated with the same Form Request (including `authorize()`), and executed by the same service, as the online form.
+- **Exactly once.** The operation uuid is recorded in `sync_operations` in the same database transaction as the change. A retry after a lost response returns the stored result; creates are also idempotent by record uuid. Interrupted syncs resume without duplicates.
+- **Conflicts.** Mills, buyers, dispatches and loadings have a `version`. An offline edit made against an old version is **not** applied; the Sync panel shows *server now* vs *your change* with **Keep server version** / **Use my change**.
+- **When sync runs.** On opening the app, returning to it, reconnecting, every minute while changes wait, and **Sync now**. iOS cannot sync while the app is closed, so nothing relies on Background Sync.
+- **Accounts.** Each user has a separate local database. Changes only sync under the account that made them. Signing out with unsynced changes warns first and keeps them for that user; with none, the local copy is deleted. If the server reports the session has ended, offline data is hidden until the user signs in again (changes are kept). A device that hasn't reached the server for `OFFLINE_MAX_DAYS` (default 30) stops showing offline data.
+- **Caching.** Only public files are cached (build assets, icons, and an offline shell with no user data). Signed-in pages, `/sync/*`, lookups and photos are never cached. A new deployment produces a new service-worker version automatically; the worker never touches the IndexedDB outbox.
+
+### iPhone notes
+
+1. Open the site in Safari and tick **Keep me signed in** when signing in.
+2. **Share → Add to Home Screen.** Use the app from the Home Screen icon: iOS keeps Home Screen app data safely, while plain Safari tabs may clear website data after 7 days without use.
+3. Open the app once while online before going to an area without signal, so the latest data is on the phone.
+4. Photos are compressed on the phone (about 0.3–0.8 MB each) and stay on the phone until the server confirms they are stored.
+5. Tap the cloud icon in the top bar to see what is waiting, retry, or resolve a conflict.
+
+### Testing
+
+```bash
+php artisan test                      # includes sync API tests (tests/Feature/Sync)
+BASE_URL=http://127.0.0.1:8000 ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run test:browser
+```
+
+The browser tests (local database only, never production) cut the network in Chrome and run: offline sample/bundle/dispatch/response/loading with photos, offline reload, automatic sync, interrupted sync, conflicting edits, account switching and session expiry. Real-device checks still needed on an iPhone: camera capture, Add to Home Screen, and reopening the installed app in airplane mode.
 
 ---
 
@@ -127,6 +192,34 @@ max_file_uploads = 20
 
 Photos are stored on the **private** disk (`storage/app/private`) and are served only to signed-in users. Back up this folder together with the database.
 
+### Updating a live installation (backup → deploy → rollback)
+
+The offline release adds columns (`uuid`, `version`) and one table (`sync_operations`). The migrations are additive; nothing is dropped or rewritten.
+
+```bash
+cd /path/to/sales-tracking
+php artisan down                                            # optional maintenance page
+
+# 1. Backups (keep them outside the web folder)
+mysqldump -h HOST -u USER -p DBNAME > ~/backup-$(date +%F).sql
+tar -czf ~/photos-$(date +%F).tgz storage/app/private
+cp .env ~/sales-tracking.env.backup
+
+# 2. Replace the code — KEEP .env and storage/ (uploaded photos live there)
+find . -mindepth 1 -maxdepth 1 ! -name '.env' ! -name 'storage' ! -name 'release.zip' -exec rm -rf {} +
+unzip -oq release.zip && rm release.zip
+chmod -R 775 storage bootstrap/cache
+
+# 3. Migrate and cache
+php artisan migrate --force
+php artisan optimize:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan up
+```
+
+Check: `/sw.js` returns JavaScript, `/offline-shell` returns 200, `/sync/status` returns JSON.
+
+**Rollback:** `php artisan migrate:rollback --step=2` removes only the offline columns/table, then restore the previous code. To restore everything instead: `mysql -u USER -p DBNAME < ~/backup-YYYY-MM-DD.sql`. Devices with unsynced offline changes keep them; they sync once the offline release is back.
+
 ### Backups
 
 Back up both:
@@ -171,6 +264,7 @@ Stored values are plain strings, so old records stay readable if an option is la
 | `loading_photos` | Photos per truck |
 | `activities` | Audit trail (who did what, when) |
 | `reference_sequences` | Counters for reference numbers |
+| `sync_operations` | Offline changes already applied (exactly-once sync) |
 
 Foreign keys use `RESTRICT` on delete so historical records can never be orphaned. Multi-record operations (bundles, multi-buyer dispatches, loadings with photos) run inside database transactions.
 
@@ -182,10 +276,14 @@ app/
   Http/Controllers/   One controller per module (+ Settings/UserController)
   Http/Requests/      Form Request validation per module
   Policies/           Authorization rules per model
-  Services/           SampleService, DispatchService, LoadingService (workflow + transactions)
+  Services/           Sample/Dispatch/Loading/Directory services, OfflineSnapshotService
   Support/            ReferenceNumber, PhotoStorage, Cities
+  Sync/               SyncOperationService (offline changes), SyncPresenter, conflict types
 resources/
   views/              Blade views, components (form fields, picker, photo input, badges)
   css/app.css         Design system on top of Bootstrap 5
   js/modules/         Picker, bundle builder, photo compression, quick-add dialogs, UI helpers
+  js/offline/         IndexedDB, outbox, sync engine, status panel, form capture
+  js/offline/app/     Offline app screens (served by the service worker)
+  pwa/sw.js           Service worker template (served at /sw.js)
 ```
