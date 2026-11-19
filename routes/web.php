@@ -7,6 +7,7 @@ use App\Http\Controllers\LoadingController;
 use App\Http\Controllers\LookupController;
 use App\Http\Controllers\MillController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\RiceVarietyController;
 use App\Http\Controllers\SampleBundleController;
@@ -16,6 +17,10 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\Sync\SyncController;
 use Illuminate\Support\Facades\Route;
+
+// Installable / offline app (public: contain no user data).
+Route::get('sw.js', [PwaController::class, 'serviceWorker'])->name('pwa.sw');
+Route::get('offline-shell', [PwaController::class, 'shell'])->name('pwa.shell');
 
 // Offline app: connectivity/session check (works signed in or out).
 Route::get('sync/status', [SyncController::class, 'status'])->middleware('throttle:120,1')->name('sync.status');
