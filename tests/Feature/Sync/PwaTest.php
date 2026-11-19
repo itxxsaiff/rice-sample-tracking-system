@@ -29,7 +29,7 @@ class PwaTest extends TestCase
 
         foreach ([null, $user] as $as) {
             $res = $as ? $this->actingAs($as)->get('/offline-shell') : $this->get('/offline-shell');
-            $res->assertOk()->assertSee('offline-root', false)
+            $res->assertOk()->assertSee('offline-root', false)->assertSee('window.RST_CONFIG', false)->assertSee('per_maund', false)
                 ->assertDontSee('Secret Person')->assertDontSee('secret@example.com')
                 ->assertDontSee('csrf-token', false)->assertDontSee('app-user', false);
         }

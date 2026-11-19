@@ -18,11 +18,15 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     @fonts
+    <script>
+        // Business vocabulary only (config/rice.php) — no user data.
+        window.RST_CONFIG = @json($config);
+    </script>
     @vite(['resources/css/app.css', 'resources/js/offline.js'])
 </head>
 <body data-offline-app>
     <aside class="app-sidebar">
-        <a href="/" class="sidebar-brand">
+        <a href="#/" class="sidebar-brand">
             <img src="/images/logo.png" alt="Ukasha Pacific International" class="brand-logo" style="height:38px;width:auto">
             <span class="brand-text">Rice Samples<small>Tracking &amp; Dispatch</small></span>
         </a>
@@ -38,7 +42,7 @@
 
     <div class="app-main">
         <header class="app-topbar">
-            <a href="/" class="btn btn-light btn-icon d-lg-none" data-back aria-label="Back"><i class="bi bi-chevron-left"></i></a>
+            <a href="#/" class="btn btn-light btn-icon d-lg-none" data-back aria-label="Back"><i class="bi bi-chevron-left"></i></a>
             <h1 class="topbar-title flex-grow-1"><span data-page-title>Rice Samples</span></h1>
             <div data-sync-indicator></div>
         </header>
@@ -48,24 +52,24 @@
     </div>
 
     <nav class="bottom-nav" aria-label="Primary">
-        <a href="/"><i class="bi bi-grid-1x2"></i>Home</a>
-        <a href="/samples"><i class="bi bi-basket"></i>Samples</a>
+        <a href="#/"><i class="bi bi-grid-1x2"></i>Home</a>
+        <a href="#/samples"><i class="bi bi-basket"></i>Samples</a>
         <div class="fab-wrap flex-fill d-flex justify-content-center">
             <button type="button" class="fab" data-bs-toggle="offcanvas" data-bs-target="#quickActions" aria-label="Quick actions"><i class="bi bi-plus-lg"></i></button>
         </div>
-        <a href="/dispatches"><i class="bi bi-send"></i>Dispatch</a>
-        <a href="/loading"><i class="bi bi-truck"></i>Loading</a>
+        <a href="#/dispatches"><i class="bi bi-send"></i>Dispatch</a>
+        <a href="#/loading"><i class="bi bi-truck"></i>Loading</a>
     </nav>
 
     <div class="offcanvas offcanvas-bottom action-sheet" tabindex="-1" id="quickActions">
         <div class="offcanvas-header pb-2"><h5 class="offcanvas-title fw-semibold">Quick actions</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
         <div class="list-group list-group-flush pb-2">
-            <a href="/samples/create" class="list-group-item list-group-item-action"><span class="stat-icon tone-navy"><i class="bi bi-basket"></i></span><span>Add sample</span></a>
-            <a href="/bundles/create" class="list-group-item list-group-item-action"><span class="stat-icon tone-gold"><i class="bi bi-boxes"></i></span><span>New bundle</span></a>
-            <a href="/dispatches/create" class="list-group-item list-group-item-action"><span class="stat-icon tone-blue"><i class="bi bi-send"></i></span><span>Dispatch samples</span></a>
-            <a href="/loading" class="list-group-item list-group-item-action"><span class="stat-icon tone-teal"><i class="bi bi-truck"></i></span><span>Record loading</span></a>
-            <a href="/mills/create" class="list-group-item list-group-item-action"><span class="stat-icon tone-slate"><i class="bi bi-buildings"></i></span><span>Add rice mill</span></a>
-            <a href="/buyers/create" class="list-group-item list-group-item-action"><span class="stat-icon tone-purple"><i class="bi bi-people"></i></span><span>Add buyer</span></a>
+            <a href="#/samples/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-navy"><i class="bi bi-basket"></i></span><span>Add sample</span></a>
+            <a href="#/bundles/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-gold"><i class="bi bi-boxes"></i></span><span>New bundle</span></a>
+            <a href="#/dispatches/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-blue"><i class="bi bi-send"></i></span><span>Dispatch samples</span></a>
+            <a href="#/loading" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-teal"><i class="bi bi-truck"></i></span><span>Record loading</span></a>
+            <a href="#/mills/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-slate"><i class="bi bi-buildings"></i></span><span>Add rice mill</span></a>
+            <a href="#/buyers/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-purple"><i class="bi bi-people"></i></span><span>Add buyer</span></a>
         </div>
     </div>
 

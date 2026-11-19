@@ -39,6 +39,17 @@ class PwaController extends Controller
     /** Anonymous app shell used when the server is unreachable. Contains no user data. */
     public function shell(): Response
     {
-        return response()->view('offline.shell')->header('Cache-Control', 'no-cache');
+        // Business vocabulary only (config/rice.php) — no user data.
+        $config = [
+            'sample_units' => config('rice.sample_units'),
+            'quantity_units' => config('rice.quantity_units'),
+            'rate_units' => config('rice.rate_units'),
+            'packing_types' => config('rice.packing_types'),
+            'cities' => config('rice.cities'),
+            'max_photos' => config('rice.max_photos_per_upload'),
+            'max_days_without_server' => config('offline.max_days_without_server'),
+        ];
+
+        return response()->view('offline.shell', compact('config'))->header('Cache-Control', 'no-cache');
     }
 }

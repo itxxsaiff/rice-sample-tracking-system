@@ -175,6 +175,22 @@ export async function enqueue(db, { type, payload, summary, photos = [] }) {
     return ops[0].uuid;
 }
 
+/** Queue extra photos for a record that already exists (locally or on the server). */
+export async function enqueuePhotos(db, { targetType, target, label, files }) {
+    await db.transaction('rw', db.ops, db.photos, async () => {
+        for (const file of files) {
+            const id = uuid();
+            await db.ops.add({
+                uuid: id, type: 'photo.add', payload: { uuid: id, target_type: targetType, target },
+                summary: `Photo for ${label}`, deps: [target], creates: [], status: 'pending', attempts: 0, created_at: now(),
+            });
+            await db.photos.put({ uuid: id, op_uuid: id, target_uuid: target, target_type: targetType, blob: file, name: file.name, size: file.size, type: file.type });
+        }
+    });
+    requestPersistence();
+    window.dispatchEvent(new CustomEvent('rst:outbox-changed'));
+}
+
 /** Replace local records with the server's authoritative copies. */
 export async function applyServerRecords(db, items) {
     for (const { type, record } of items || []) {
