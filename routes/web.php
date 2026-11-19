@@ -14,7 +14,11 @@ use App\Http\Controllers\SampleController;
 use App\Http\Controllers\SampleDispatchController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Settings\UserController;
+use App\Http\Controllers\Sync\SyncController;
 use Illuminate\Support\Facades\Route;
+
+// Offline app: connectivity/session check (works signed in or out).
+Route::get('sync/status', [SyncController::class, 'status'])->middleware('throttle:120,1')->name('sync.status');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'create'])->name('login');
@@ -26,6 +30,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('search', SearchController::class)->name('search');
+
+    Route::prefix('sync')->name('sync.')->middleware('throttle:240,1')->group(function () {
+        Route::get('snapshot', [SyncController::class, 'snapshot'])->name('snapshot');
+    });
     Route::get('records', [RecordsController::class, 'index'])->name('records.index');
 
     Route::get('account', [ProfileController::class, 'edit'])->name('profile.edit');
