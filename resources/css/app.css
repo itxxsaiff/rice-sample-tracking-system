@@ -466,3 +466,17 @@ a.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); colo
     body.has-action-bar .app-content { padding-bottom: calc(100px + var(--safe-bottom)); }
     .modal-fullscreen-sm-down .modal-footer { padding-bottom: calc(.75rem + var(--safe-bottom)); }
 }
+
+/* Sync status pill + panel */
+.sync-pill { display: inline-flex; align-items: center; gap: .4rem; border: 0; border-radius: 999px; padding: .4rem .75rem; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.sync-pill i { font-size: 1rem; }
+.sync-pill.tone-slate { background: #eef1f5; }
+@media (max-width: 575.98px) { .sync-pill-label { max-width: 0; overflow: hidden; display: none; } .sync-pill { padding: .5rem; } }
+.spin { display: inline-block; animation: rst-spin 1s linear infinite; }
+@keyframes rst-spin { to { transform: rotate(360deg); } }
+.sync-panel { width: min(440px, 100vw) !important; }
+.sync-panel .offcanvas-body { padding-bottom: var(--safe-bottom) !important; }
+.conflict-table th, .conflict-table td { padding: .3rem .4rem !important; vertical-align: top; }
+.pending-badge { display: inline-flex; align-items: center; gap: .25rem; font-size: .7rem; font-weight: 600; color: #b45309; background: #fef3e2; border-radius: 999px; padding: .12rem .5rem; white-space: nowrap; }
+.offline-banner { background: #0f2a4a; color: #fff; font-size: .85rem; padding: .55rem 1rem; display: flex; gap: .6rem; align-items: center; justify-content: center; }
+.sync-pill-count { background: rgba(15, 31, 51, .12); border-radius: 999px; min-width: 1.3rem; height: 1.3rem; padding: 0 .3rem; display: inline-flex; align-items: center; justify-content: center; font-size: .72rem; }

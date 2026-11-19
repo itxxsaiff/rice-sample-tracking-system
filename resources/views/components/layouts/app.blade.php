@@ -37,6 +37,7 @@
                 <input type="search" name="q" value="{{ request()->routeIs('search') ? request('q') : '' }}" class="form-control" placeholder="Search samples, buyers, mills, trucks…" aria-label="Search all records">
             </form>
             <a href="{{ route('search') }}" class="btn btn-light btn-icon d-lg-none" aria-label="Search"><i class="bi bi-search"></i></a>
+            <div data-sync-indicator></div>
             @if (Route::has('samples.create'))
                 <a href="{{ route('samples.create') }}" class="btn btn-primary d-none d-lg-inline-flex"><i class="bi bi-plus-lg me-1"></i> Add Sample</a>
             @endif
