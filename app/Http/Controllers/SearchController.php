@@ -6,7 +6,6 @@ use App\Models\Buyer;
 use App\Models\Loading;
 use App\Models\Mill;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -32,8 +31,6 @@ class SearchController extends Controller
                     ->map(fn ($m) => [route('mills.show', $m), $m->name, $m->city, 'buildings']),
                 'Buyers' => Buyer::search($q)->orderBy('name')->limit(self::PER_GROUP)->get()
                     ->map(fn ($b) => [route('buyers.show', $b), $b->name, $b->city, 'people']),
-                'Bundles' => SampleBundle::where('bundle_number', 'like', $like)->latest('id')->limit(self::PER_GROUP)->get()
-                    ->map(fn ($b) => [route('bundles.show', $b), $b->bundle_number, $b->bundle_date->format('d M Y'), 'boxes']),
                 'Truck loadings' => Loading::with('dispatch.buyer:id,name')
                     ->where(fn ($w) => $w->where('truck_number', 'like', $like)->orWhere('loading_number', 'like', $like)->orWhere('driver_name', 'like', $like))
                     ->latest('id')->limit(self::PER_GROUP)->get()

@@ -7,7 +7,6 @@ use App\Models\Loading;
 use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +18,7 @@ class SyncPresenter
 {
     public const TYPES = [
         Mill::class => 'mills', Buyer::class => 'buyers', RiceVariety::class => 'varieties',
-        SampleBundle::class => 'bundles', Sample::class => 'samples', SampleDispatch::class => 'dispatches',
+        Sample::class => 'samples', SampleDispatch::class => 'dispatches',
         Loading::class => 'loadings',
     ];
 
@@ -30,7 +29,7 @@ class SyncPresenter
 
         return ['type' => $type, 'record' => match ($type) {
             'mills' => self::mill($model), 'buyers' => self::buyer($model), 'varieties' => self::variety($model),
-            'bundles' => self::bundle($model), 'samples' => self::sample($model), 'dispatches' => self::dispatch($model),
+            'samples' => self::sample($model), 'dispatches' => self::dispatch($model),
             'loadings' => self::loading($model),
         }];
     }
@@ -58,19 +57,11 @@ class SyncPresenter
         return ['uuid' => $v->uuid, 'id' => $v->id, 'name' => $v->name, 'is_active' => (bool) $v->is_active, 'version' => (int) $v->version];
     }
 
-    public static function bundle(SampleBundle $b): array
-    {
-        return [
-            'uuid' => $b->uuid, 'id' => $b->id, 'bundle_number' => $b->bundle_number,
-            'bundle_date' => $b->bundle_date->toDateString(), 'notes' => $b->notes, 'version' => (int) $b->version,
-        ];
-    }
-
     public static function sample(Sample $s): array
     {
         return [
             'uuid' => $s->uuid, 'id' => $s->id, 'sample_number' => $s->sample_number,
-            'mill_uuid' => $s->mill?->uuid, 'variety_uuid' => $s->variety?->uuid, 'bundle_uuid' => $s->bundle?->uuid,
+            'mill_uuid' => $s->mill?->uuid, 'variety_uuid' => $s->variety?->uuid,
             'collection_date' => $s->collection_date->toDateString(),
             'quantity' => $s->quantity !== null ? (float) $s->quantity : null, 'quantity_unit' => $s->quantity_unit,
             'notes' => $s->notes, 'has_photo' => (bool) $s->photo_path, 'version' => (int) $s->version,

@@ -8,7 +8,7 @@ import { h } from './util';
 import { directoryForm, directoryList, directoryShow } from './views/directory';
 import { home } from './views/home';
 import { dispatchList, dispatchNew, dispatchShow, loadingIndex, loadingNew, loadingShow, respondForm } from './views/orders';
-import { bundleNew, bundleShow, bundlesList, sampleNew, sampleShow, samplesList } from './views/samples';
+import { sampleNew, sampleShow, samplesList } from './views/samples';
 
 /**
  * Offline app: served by the service worker when the server can't be
@@ -19,7 +19,6 @@ import { bundleNew, bundleShow, bundlesList, sampleNew, sampleShow, samplesList 
 const ROUTES = [
     ['/', home],
     ['/samples', samplesList], ['/samples/new', sampleNew], ['/samples/:id', sampleShow],
-    ['/bundles', bundlesList], ['/bundles/new', bundleNew], ['/bundles/:id', bundleShow],
     ['/mills', directoryList('mill')], ['/mills/new', directoryForm('mill')], ['/mills/:id/edit', directoryForm('mill')], ['/mills/:id', directoryShow('mill')],
     ['/buyers', directoryList('buyer')], ['/buyers/new', directoryForm('buyer')], ['/buyers/:id/edit', directoryForm('buyer')], ['/buyers/:id', directoryShow('buyer')],
     ['/dispatches', dispatchList], ['/dispatches/new', dispatchNew], ['/dispatches/:id/respond', respondForm], ['/dispatches/:id/load', loadingNew], ['/dispatches/:id', dispatchShow],
@@ -28,7 +27,7 @@ const ROUTES = [
 
 const NAV = [
     ['', [['/', 'Dashboard', 'grid-1x2']]],
-    ['Samples', [['/samples', 'Samples', 'basket'], ['/bundles', 'Bundles', 'boxes']]],
+    ['Samples', [['/samples', 'Samples', 'basket']]],
     ['Orders', [['/dispatches', 'Dispatches', 'send'], ['/loading', 'Loading', 'truck']]],
     ['Directory', [['/mills', 'Rice Mills', 'buildings'], ['/buyers', 'Buyers', 'people']]],
 ];
@@ -46,12 +45,12 @@ function match(path) {
 /** Map the real URL the user opened (e.g. /samples/create, /mills/12) to an offline route. */
 async function initialRoute(user) {
     const path = location.pathname.replace(/\/+$/, '') || '/';
-    const simple = { '/samples/create': '/samples/new', '/bundles/create': '/bundles/new', '/dispatches/create': '/dispatches/new', '/mills/create': '/mills/new', '/buyers/create': '/buyers/new', '/records': '/dispatches', '/varieties': '/', '/search': '/' };
+    const simple = { '/samples/create': '/samples/new', '/bundles/create': '/samples/new', '/bundles': '/samples', '/dispatches/create': '/dispatches/new', '/mills/create': '/mills/new', '/buyers/create': '/buyers/new', '/records': '/dispatches', '/varieties': '/', '/search': '/' };
     if (simple[path]) return simple[path];
 
-    const m = path.match(/^\/(samples|bundles|mills|buyers|dispatches|loadings)\/(\d+)(\/edit|\/respond|\/loadings\/create)?$/);
+    const m = path.match(/^\/(samples|mills|buyers|dispatches|loadings)\/(\d+)(\/edit|\/respond|\/loadings\/create)?$/);
     if (m) {
-        const table = { samples: 'samples', bundles: 'bundles', mills: 'mills', buyers: 'buyers', dispatches: 'dispatches', loadings: 'loadings' }[m[1]];
+        const table = { samples: 'samples', mills: 'mills', buyers: 'buyers', dispatches: 'dispatches', loadings: 'loadings' }[m[1]];
         const record = await openDb(user.id)[table].where('id').equals(Number(m[2])).first();
         if (record) {
             const suffix = { '/edit': '/edit', '/respond': '/respond', '/loadings/create': '/load' }[m[3]] || '';

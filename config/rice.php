@@ -54,7 +54,6 @@ return [
     // Reference number prefixes.
     'prefixes' => [
         'sample' => 'SMP',
-        'bundle' => 'BND',
         'dispatch' => 'DSP',
         'loading' => 'LD',
     ],

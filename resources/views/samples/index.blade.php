@@ -1,7 +1,6 @@
 <x-layouts.app title="Samples">
-    <x-page-header title="Samples" subtitle="Every sample collected, linked to its mill and bundle.">
+    <x-page-header title="Samples" subtitle="Every sample collected, linked to its mill.">
         <x-slot:actions>
-            <a href="{{ route('bundles.create') }}" class="btn btn-light"><i class="bi bi-boxes me-1"></i> New bundle</a>
             <a href="{{ route('samples.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add sample</a>
         </x-slot:actions>
     </x-page-header>
@@ -11,7 +10,7 @@
             <div class="row g-2">
                 <div class="col-12 col-lg-12 col-xl-4">
                     <div class="search-input"><i class="bi bi-search"></i>
-                        <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="Sample no., mill, variety, bundle">
+                        <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="Sample no., mill, variety">
                     </div>
                 </div>
                 <div class="col-6 col-lg-2">

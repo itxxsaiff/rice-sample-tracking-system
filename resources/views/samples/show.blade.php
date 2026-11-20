@@ -29,7 +29,6 @@
                         <div><dt>Variety</dt><dd>{{ $sample->variety->name }}</dd></div>
                         <div><dt>Collected</dt><dd>{{ $sample->collection_date->format('d M Y') }}</dd></div>
                         <div><dt>Quantity</dt><dd>{{ $sample->quantityLabel() ?? '—' }}</dd></div>
-                        <div><dt>Bundle</dt><dd>@if ($sample->bundle)<a href="{{ route('bundles.show', $sample->bundle) }}" class="mono">{{ $sample->bundle->bundle_number }}</a>@else — @endif</dd></div>
                         <div><dt>Recorded by</dt><dd>{{ $sample->creator?->name ?? '—' }}</dd></div>
                         @if ($sample->notes)<div style="grid-column: 1 / -1"><dt>Notes</dt><dd class="fw-normal">{!! nl2br(e($sample->notes)) !!}</dd></div>@endif
                     </dl>

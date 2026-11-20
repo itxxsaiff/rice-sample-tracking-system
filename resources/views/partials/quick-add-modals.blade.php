@@ -1,4 +1,4 @@
-{{-- Inline "add new" dialogs used from sample/bundle/dispatch forms. --}}
+{{-- Inline "add new" dialogs used from sample/dispatch forms. --}}
 @push('modals')
     <div class="modal fade" id="quickMillModal" tabindex="-1" aria-labelledby="quickMillTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">

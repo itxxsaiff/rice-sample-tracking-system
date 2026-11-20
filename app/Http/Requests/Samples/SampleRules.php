@@ -4,17 +4,13 @@ namespace App\Http\Requests\Samples;
 
 use Illuminate\Validation\Rule;
 
-/** Validation rules shared by single-sample and bundle forms. */
+/** Validation rules shared by the add-samples, edit-sample and offline sync paths. */
 final class SampleRules
 {
+    /** Photos are no longer taken for samples; kept only for uploads queued on phones before that change. */
     public static function photo(): array
     {
         return ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,heic,heif', 'max:'.config('rice.max_photo_kb')];
-    }
-
-    public static function sampleNumber(?int $ignoreId = null): array
-    {
-        return ['nullable', 'string', 'max:30', 'regex:/^[A-Za-z0-9][A-Za-z0-9\-\/_. ]*$/', Rule::unique('samples', 'sample_number')->ignore($ignoreId)];
     }
 
     /**
@@ -30,16 +26,6 @@ final class SampleRules
             $prefix.'quantity' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             $prefix.'quantity_unit' => ['nullable', 'required_with:'.$prefix.'quantity', Rule::in(array_keys(config('rice.sample_units')))],
             $prefix.'notes' => ['nullable', 'string', 'max:2000'],
-            $prefix.'photo' => self::photo(),
-        ];
-    }
-
-    public static function messages(): array
-    {
-        return [
-            'sample_number.regex' => 'Use letters, numbers and dashes only.',
-            'photo.mimes' => 'The photo must be a JPG, PNG, WEBP or HEIC image.',
-            'photo.max' => 'The photo is too large (max :max KB).',
         ];
     }
 }

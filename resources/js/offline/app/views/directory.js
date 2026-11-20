@@ -55,7 +55,7 @@ export function directoryShow(kind) {
                     return `<a href="#/samples/${h(s.uuid)}" class="list-group-item list-group-item-action py-3"><div class="d-flex justify-content-between gap-2">
                         <span><span class="fw-semibold mono">${h(l.number)}</span> <span class="badge text-bg-light border">${h(l.variety)}</span> ${pendingBadge(s)}</span>
                         <span class="small text-muted text-nowrap">${fmtDate(s.collection_date)}</span></div>
-                        <div class="small text-muted">${h(qty(s.quantity, s.quantity_unit) || '')}${s.bundle_uuid ? ` · bundle ${h(ctx.bundle(s.bundle_uuid)?.bundle_number || 'new')}` : ''}</div></a>`;
+                        <div class="small text-muted">${h(qty(s.quantity, s.quantity_unit) || '')}</div></a>`;
                 }).join('')}</div>` : empty('basket', 'No samples from this mill on this device')}</div>`;
         } else {
             const dispatches = ctx.dispatches.filter((d) => d.buyer_uuid === r.uuid).sort(newestFirst('dispatch_date'));

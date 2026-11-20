@@ -24,108 +24,85 @@ class SampleTest extends TestCase
         $this->user = User::factory()->employee()->create();
     }
 
+    private function row(Mill $mill, RiceVariety $variety, array $extra = []): array
+    {
+        return ['mill_id' => $mill->id, 'rice_variety_id' => $variety->id, 'collection_date' => now()->toDateString(), ...$extra];
+    }
+
     public function test_sample_is_created_with_auto_number_and_linked_to_mill(): void
     {
         $mill = Mill::factory()->create(['city' => 'Hafizabad']);
         $variety = RiceVariety::factory()->create(['name' => '1121']);
 
         $this->actingAs($this->user)->post(route('samples.store'), [
-            'mill_id' => $mill->id, 'rice_variety_id' => $variety->id,
-            'collection_date' => now()->toDateString(), 'quantity' => 500, 'quantity_unit' => 'g',
+            'samples' => [$this->row($mill, $variety, ['quantity' => 5, 'quantity_unit' => 'kg'])],
         ])->assertSessionHasNoErrors();
 
         $sample = Sample::firstOrFail();
         $this->assertSame('SMP-0001', $sample->sample_number);
         $this->assertTrue($sample->mill->is($mill));
         $this->assertSame('Hafizabad', $sample->city());
+        $this->assertSame('kg', $sample->quantity_unit);
         $this->assertSame($this->user->id, $sample->created_by);
         $this->assertDatabaseHas('activities', ['subject_type' => 'sample', 'subject_id' => $sample->id, 'event' => 'created']);
     }
 
-    public function test_reference_numbers_are_sequential_and_skip_manual_numbers(): void
+    public function test_several_independent_samples_are_saved_from_one_form(): void
+    {
+        $millA = Mill::factory()->create();
+        $millB = Mill::factory()->create();
+        $v1121 = RiceVariety::factory()->create();
+        $v1509 = RiceVariety::factory()->create();
+
+        $this->actingAs($this->user)->post(route('samples.store'), ['samples' => [
+            'r0' => $this->row($millA, $v1121, ['quantity' => 2, 'quantity_unit' => 'kg']),
+            'r3' => $this->row($millB, $v1509, ['notes' => 'second']),
+        ]])->assertRedirect(route('samples.index'))->assertSessionHas('success', '2 samples saved (SMP-0001 – SMP-0002).');
+
+        $this->assertSame(['SMP-0001', 'SMP-0002'], Sample::orderBy('id')->pluck('sample_number')->all());
+        $this->assertSame([$millA->id, $millB->id], Sample::orderBy('id')->pluck('mill_id')->all());
+        $this->assertNull(Sample::where('mill_id', $millB->id)->value('quantity'));
+    }
+
+    public function test_one_invalid_row_saves_nothing(): void
     {
         $mill = Mill::factory()->create();
         $variety = RiceVariety::factory()->create();
-        $payload = ['mill_id' => $mill->id, 'rice_variety_id' => $variety->id, 'collection_date' => now()->toDateString()];
 
-        $this->actingAs($this->user)->post(route('samples.store'), $payload + ['sample_number' => 'smp-0002']);
-        $this->post(route('samples.store'), $payload);
-        $this->post(route('samples.store'), $payload);
-
-        $this->assertEqualsCanonicalizing(['SMP-0002', 'SMP-0001', 'SMP-0003'], Sample::pluck('sample_number')->all());
-    }
-
-    public function test_duplicate_sample_number_is_rejected(): void
-    {
-        $existing = Sample::factory()->create();
-
-        $this->actingAs($this->user)->post(route('samples.store'), [
-            'sample_number' => $existing->sample_number, 'mill_id' => $existing->mill_id,
-            'rice_variety_id' => $existing->rice_variety_id, 'collection_date' => now()->toDateString(),
-        ])->assertSessionHasErrors('sample_number');
-    }
-
-    public function test_sample_requires_mill_variety_and_valid_date(): void
-    {
-        $this->actingAs($this->user)->post(route('samples.store'), [
-            'collection_date' => now()->addDays(3)->toDateString(), 'quantity' => 10,
-        ])->assertSessionHasErrors(['mill_id', 'rice_variety_id', 'collection_date', 'quantity_unit']);
+        $this->actingAs($this->user)->post(route('samples.store'), ['samples' => [
+            'r0' => $this->row($mill, $variety),
+            'r1' => ['collection_date' => now()->addDays(3)->toDateString(), 'quantity' => 10],
+        ]])->assertSessionHasErrors(['samples.r1.mill_id', 'samples.r1.rice_variety_id', 'samples.r1.collection_date', 'samples.r1.quantity_unit']);
 
         $this->assertSame(0, Sample::count());
     }
 
-    public function test_sample_photo_is_stored_privately_and_served_to_signed_in_users_only(): void
+    public function test_sample_numbers_are_always_automatic(): void
     {
         $mill = Mill::factory()->create();
         $variety = RiceVariety::factory()->create();
 
-        $this->actingAs($this->user)->post(route('samples.store'), [
-            'mill_id' => $mill->id, 'rice_variety_id' => $variety->id, 'collection_date' => now()->toDateString(),
-            'photo' => UploadedFile::fake()->image('rice.jpg', 1200, 900),
-        ])->assertSessionHasNoErrors();
+        $this->actingAs($this->user)->post(route('samples.store'), ['samples' => [$this->row($mill, $variety, ['sample_number' => 'MY-OWN', 'photo' => UploadedFile::fake()->image('x.jpg')])]]);
+        $this->post(route('samples.store'), ['samples' => [$this->row($mill, $variety)]]);
 
-        $sample = Sample::firstOrFail();
-        $this->assertNotNull($sample->photo_path);
-        Storage::disk('local')->assertExists($sample->photo_path);
-        $this->assertStringStartsWith('samples/', $sample->photo_path);
+        $this->assertSame(['SMP-0001', 'SMP-0002'], Sample::orderBy('id')->pluck('sample_number')->all());
+        $this->assertNull(Sample::first()->photo_path); // sample photos are no longer taken
+        Storage::disk('local')->assertDirectoryEmpty('/');
 
-        $this->get(route('samples.photo', $sample))->assertOk();
+        // Editing never changes the number either.
+        $sample = Sample::first();
+        $this->put(route('samples.update', $sample), [...$this->row($mill, $variety), 'sample_number' => 'CHANGED'])->assertSessionHasNoErrors();
+        $this->assertSame('SMP-0001', $sample->fresh()->sample_number);
+    }
+
+    public function test_existing_sample_photo_is_served_to_signed_in_users_only(): void
+    {
+        Storage::disk('local')->put('samples/old.jpg', 'jpeg-bytes');
+        $sample = Sample::factory()->create(['photo_path' => 'samples/old.jpg']);
+
+        $this->actingAs($this->user)->get(route('samples.photo', $sample))->assertOk();
         $this->post(route('logout'));
         $this->get(route('samples.photo', $sample))->assertRedirect(route('login'));
-    }
-
-    public function test_non_image_uploads_are_rejected(): void
-    {
-        $mill = Mill::factory()->create();
-        $variety = RiceVariety::factory()->create();
-
-        foreach ([UploadedFile::fake()->create('shell.php', 10, 'application/x-php'), UploadedFile::fake()->create('x.svg', 5, 'image/svg+xml')] as $file) {
-            $this->actingAs($this->user)->post(route('samples.store'), [
-                'mill_id' => $mill->id, 'rice_variety_id' => $variety->id, 'collection_date' => now()->toDateString(), 'photo' => $file,
-            ])->assertSessionHasErrors('photo');
-        }
-
-        $this->assertSame(0, Sample::count());
-    }
-
-    public function test_replacing_photo_removes_old_file(): void
-    {
-        $mill = Mill::factory()->create();
-        $variety = RiceVariety::factory()->create();
-        $this->actingAs($this->user)->post(route('samples.store'), [
-            'mill_id' => $mill->id, 'rice_variety_id' => $variety->id, 'collection_date' => now()->toDateString(),
-            'photo' => UploadedFile::fake()->image('one.jpg'),
-        ]);
-        $sample = Sample::firstOrFail();
-        $old = $sample->photo_path;
-
-        $this->put(route('samples.update', $sample), [
-            'sample_number' => $sample->sample_number, 'mill_id' => $mill->id, 'rice_variety_id' => $variety->id,
-            'collection_date' => now()->toDateString(), 'photo' => UploadedFile::fake()->image('two.jpg'),
-        ])->assertSessionHasNoErrors();
-
-        Storage::disk('local')->assertMissing($old);
-        Storage::disk('local')->assertExists($sample->fresh()->photo_path);
     }
 
     public function test_samples_appear_in_their_mills_history(): void
@@ -181,7 +158,8 @@ class SampleTest extends TestCase
 
         $this->actingAs($this->user);
         $this->get(route('samples.index'))->assertOk()->assertSee($sample->sample_number);
-        $this->get(route('samples.create'))->assertOk();
+        $this->get(route('samples.create'))->assertOk()->assertSee('Add another sample')
+            ->assertDontSee('name="samples[0][sample_number]"', false)->assertDontSee('Take photo')->assertDontSee('bundle');
         $this->get(route('samples.show', $sample))->assertOk()->assertSee($sample->mill->name);
         $this->get(route('samples.edit', $sample))->assertOk();
     }

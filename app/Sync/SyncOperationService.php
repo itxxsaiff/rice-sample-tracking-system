@@ -9,7 +9,6 @@ use App\Http\Requests\Dispatches\StoreDispatchRequest;
 use App\Http\Requests\Loadings\LoadingPhotosRequest;
 use App\Http\Requests\Loadings\LoadingRequest;
 use App\Http\Requests\Mills\MillRequest;
-use App\Http\Requests\Samples\BundleRequest;
 use App\Http\Requests\Samples\SampleRequest;
 use App\Http\Requests\Samples\SampleRules;
 use App\Http\Requests\Varieties\RiceVarietyRequest;
@@ -19,7 +18,6 @@ use App\Models\LoadingPhoto;
 use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use App\Models\SyncOperation;
 use App\Models\User;
@@ -55,7 +53,7 @@ class SyncOperationService
 {
     public const TYPES = [
         'mill.create', 'mill.update', 'buyer.create', 'buyer.update', 'variety.create',
-        'sample.create', 'bundle.create', 'bundle.add_samples',
+        'sample.create', 'bundle.create', 'bundle.add_samples', // bundle.*: legacy, see legacyBundleSamples()
         'dispatch.create', 'dispatch.respond',
         'loading.create', 'loading.loaded', 'order.complete', 'photo.add',
     ];
@@ -122,8 +120,7 @@ class SyncOperationService
             'variety.create' => [$this->existing(RiceVariety::class, $p) ?? $this->directory->createVariety(
                 $this->validated(RiceVarietyRequest::class, $user, $fields)->validated(), $this->uuid($p))],
             'sample.create' => [$this->createSample($p, $user)],
-            'bundle.create' => $this->createBundle($p, $user),
-            'bundle.add_samples' => $this->addToBundle($p, $user),
+            'bundle.create', 'bundle.add_samples' => $this->legacyBundleSamples($p, $user),
             'dispatch.create' => $this->createDispatches($p, $user),
             'dispatch.respond' => [$this->respond($p, $user)],
             'loading.create' => $this->createLoading($p, $user),
@@ -144,7 +141,7 @@ class SyncOperationService
         return $class === Mill::class ? $this->directory->updateMill($model, $data) : $this->directory->updateBuyer($model, $data);
     }
 
-    // ---- samples & bundles ----------------------------------------------
+    // ---- samples ---------------------------------------------------------
 
     private function createSample(array $p, User $user): Sample
     {
@@ -152,68 +149,30 @@ class SyncOperationService
             return $existing;
         }
 
-        $fields = $this->resolve((array) ($p['fields'] ?? []), [
-            'mill_id' => [Mill::class, 'mill'], 'rice_variety_id' => [RiceVariety::class, 'rice variety'], 'sample_bundle_id' => [SampleBundle::class, 'bundle'],
-        ]);
+        $fields = $this->resolve((array) ($p['fields'] ?? []), ['mill_id' => [Mill::class, 'mill'], 'rice_variety_id' => [RiceVariety::class, 'rice variety']]);
         $data = $this->validated(SampleRequest::class, $user, $fields)->validated();
 
         return $this->samples->create([...$data, 'uuid' => $this->uuid($p)], $user);
     }
 
-    /** @return list<Model> */
-    private function createBundle(array $p, User $user): array
+    /**
+     * Bundles were removed. A phone may still hold "bundle" changes saved
+     * before that update: their samples are saved as ordinary, independent
+     * samples (the bundle itself is dropped).
+     *
+     * @return list<Model>
+     */
+    private function legacyBundleSamples(array $p, User $user): array
     {
-        if ($existing = $this->existing(SampleBundle::class, $p)) {
-            return [$existing, ...$existing->samples];
-        }
+        $fields = (array) ($p['fields'] ?? []);
 
-        [$fields, $uuids] = $this->bundleRows((array) ($p['fields'] ?? []));
-        $request = $this->validated(BundleRequest::class, $user, $fields);
-        $bundle = $this->samples->createBundle([...$request->validated(), 'uuid' => $this->uuid($p)], $this->withUuids($request->rows(), $uuids), $user);
-
-        return [$bundle, ...$bundle->samples()->get()];
-    }
-
-    /** @return list<Model> */
-    private function addToBundle(array $p, User $user): array
-    {
-        $bundle = $this->find(SampleBundle::class, $p['target'] ?? null, 'bundle');
-        [$fields, $uuids] = $this->bundleRows((array) ($p['fields'] ?? []));
-
-        if ($uuids && Sample::whereIn('uuid', array_values($uuids))->exists()) {
-            return [$bundle, ...Sample::whereIn('uuid', array_values($uuids))->get()];
-        }
-
-        $request = $this->validated(BundleRequest::class, $user, $fields, ['bundle' => $bundle]);
-
-        return [$bundle, ...$this->samples->addToBundle($bundle, $this->withUuids($request->rows(), $uuids), $user)];
-    }
-
-    /** Resolve mill/variety references inside bundle rows; return [fields, rowKey => sample uuid]. */
-    private function bundleRows(array $fields): array
-    {
-        $uuids = [];
-        $rows = [];
-
-        foreach ((array) ($fields['samples'] ?? []) as $key => $row) {
-            $row = (array) $row;
-            if (! empty($row['uuid'])) {
-                $uuids[$key] = $this->assertUuid($row['uuid']);
-            }
-            unset($row['uuid']);
-            $rows[$key] = $this->resolve($row, ['mill_id' => [Mill::class, 'mill'], 'rice_variety_id' => [RiceVariety::class, 'rice variety']]);
-        }
-
-        return [['samples' => $rows] + $fields, $uuids];
-    }
-
-    private function withUuids(array $rows, array $uuids): array
-    {
-        foreach ($rows as $key => $row) {
-            $rows[$key]['uuid'] = $uuids[$key] ?? null;
-        }
-
-        return $rows;
+        return collect((array) ($fields['samples'] ?? []))->map(fn ($row) => $this->createSample([
+            'uuid' => ((array) $row)['uuid'] ?? null,
+            'fields' => [
+                ...collect((array) $row)->only(['mill_id', 'rice_variety_id', 'quantity', 'quantity_unit', 'notes'])->all(),
+                'collection_date' => ((array) $row)['collection_date'] ?? null ?: ($fields['bundle_date'] ?? null),
+            ],
+        ], $user))->values()->all();
     }
 
     // ---- dispatches & responses -----------------------------------------

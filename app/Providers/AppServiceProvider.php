@@ -6,7 +6,6 @@ use App\Models\Buyer;
 use App\Models\Loading;
 use App\Models\Mill;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -35,7 +34,6 @@ class AppServiceProvider extends ServiceProvider
             'mill' => Mill::class,
             'buyer' => Buyer::class,
             'sample' => Sample::class,
-            'bundle' => SampleBundle::class,
             'dispatch' => SampleDispatch::class,
             'loading' => Loading::class,
         ]);

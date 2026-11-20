@@ -80,7 +80,7 @@ class SampleDispatchController extends Controller
     {
         $this->authorize('view', $dispatch);
 
-        $dispatch->load(['buyer', 'sample.mill', 'sample.variety', 'sample.bundle', 'creator', 'responder', 'activities.user', 'loadings' => fn ($q) => $q->withCount('photos')]);
+        $dispatch->load(['buyer', 'sample.mill', 'sample.variety', 'creator', 'responder', 'activities.user', 'loadings' => fn ($q) => $q->withCount('photos')]);
 
         // Same sample's other dispatches, to compare buyer responses side by side.
         $siblings = SampleDispatch::with('buyer:id,name,city')

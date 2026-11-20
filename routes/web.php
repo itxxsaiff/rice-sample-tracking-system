@@ -10,7 +10,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\RecordsController;
 use App\Http\Controllers\RiceVarietyController;
-use App\Http\Controllers\SampleBundleController;
 use App\Http\Controllers\SampleController;
 use App\Http\Controllers\SampleDispatchController;
 use App\Http\Controllers\SearchController;
@@ -48,9 +47,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('samples/{sample}/photo', [SampleController::class, 'photo'])->name('samples.photo');
     Route::resource('samples', SampleController::class);
-    Route::get('bundles/{bundle}/samples/create', [SampleBundleController::class, 'addSamples'])->name('bundles.samples.create');
-    Route::post('bundles/{bundle}/samples', [SampleBundleController::class, 'storeSamples'])->name('bundles.samples.store');
-    Route::resource('bundles', SampleBundleController::class)->parameters(['bundles' => 'bundle']);
+    Route::redirect('bundles/{any?}', '/samples')->where('any', '.*'); // bundles were removed; old links land on Samples
 
     Route::get('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respondForm'])->name('dispatches.respond');
     Route::put('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respond'])->name('dispatches.respond.update');

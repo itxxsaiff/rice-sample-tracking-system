@@ -13,7 +13,7 @@ import Dexie from 'dexie';
  */
 const cache = new Map();
 
-export const RECORD_TABLES = ['mills', 'buyers', 'varieties', 'bundles', 'samples', 'dispatches', 'loadings'];
+export const RECORD_TABLES = ['mills', 'buyers', 'varieties', 'samples', 'dispatches', 'loadings'];
 
 export function openDb(userId) {
     if (!userId) throw new Error('No user for local database');
@@ -31,6 +31,11 @@ export function openDb(userId) {
         photos: 'uuid, op_uuid, target_uuid',
         ops: '++seq, &uuid, status',
         meta: 'key',
+    });
+    // v2: bundles removed (samples are independent).
+    db.version(2).stores({
+        bundles: null,
+        samples: 'uuid, id, mill_uuid, variety_uuid, collection_date',
     });
 
     cache.set(userId, db);

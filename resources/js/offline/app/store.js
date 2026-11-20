@@ -26,7 +26,6 @@ export async function loadContext() {
     ctx.mill = (uuid) => ctx.millsBy.get(uuid);
     ctx.buyer = (uuid) => ctx.buyersBy.get(uuid);
     ctx.variety = (uuid) => ctx.varietiesBy.get(uuid);
-    ctx.bundle = (uuid) => ctx.bundlesBy.get(uuid);
     ctx.sample = (uuid) => ctx.samplesBy.get(uuid);
     ctx.dispatch = (uuid) => ctx.dispatchesBy.get(uuid);
     ctx.loading = (uuid) => ctx.loadingsBy.get(uuid);

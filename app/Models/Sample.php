@@ -15,7 +15,7 @@ class Sample extends Model
     use HasFactory, RecordsActivity, Syncable;
 
     protected $fillable = [
-        'sample_number', 'sample_bundle_id', 'mill_id', 'rice_variety_id',
+        'sample_number', 'mill_id', 'rice_variety_id',
         'collection_date', 'quantity', 'quantity_unit', 'notes',
     ];
 
@@ -35,11 +35,6 @@ class Sample extends Model
     public function variety(): BelongsTo
     {
         return $this->belongsTo(RiceVariety::class, 'rice_variety_id');
-    }
-
-    public function bundle(): BelongsTo
-    {
-        return $this->belongsTo(SampleBundle::class, 'sample_bundle_id');
     }
 
     public function creator(): BelongsTo
@@ -84,12 +79,10 @@ class Sample extends Model
                     ->where('sample_number', 'like', $like)
                     ->orWhere('notes', 'like', $like)
                     ->orWhereHas('mill', fn (Builder $m) => $m->where('name', 'like', $like)->orWhere('city', 'like', $like))
-                    ->orWhereHas('variety', fn (Builder $v) => $v->where('name', 'like', $like))
-                    ->orWhereHas('bundle', fn (Builder $b) => $b->where('bundle_number', 'like', $like)));
+                    ->orWhereHas('variety', fn (Builder $v) => $v->where('name', 'like', $like)));
             })
             ->when($filters['mill_id'] ?? null, fn (Builder $q, $id) => $q->where('mill_id', $id))
             ->when($filters['variety_id'] ?? null, fn (Builder $q, $id) => $q->where('rice_variety_id', $id))
-            ->when($filters['bundle_id'] ?? null, fn (Builder $q, $id) => $q->where('sample_bundle_id', $id))
             ->when($filters['city'] ?? null, fn (Builder $q, $city) => $q->whereHas('mill', fn (Builder $m) => $m->where('city', $city)))
             ->when($filters['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '>=', $date))
             ->when($filters['to'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '<=', $date))

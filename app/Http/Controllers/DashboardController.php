@@ -49,6 +49,7 @@ class DashboardController extends Controller
         // show each business event once in the feed.
         $activities = Activity::query()
             ->with(['user:id,name', 'subject'])
+            ->whereIn('subject_type', ['mill', 'buyer', 'sample', 'dispatch', 'loading']) // older entries may refer to removed record types
             ->whereNot(fn ($q) => $q->where('subject_type', 'sample')->where('event', 'dispatched'))
             ->whereNot(fn ($q) => $q->where('subject_type', 'dispatch')->where('event', 'loading_recorded'))
             ->latest('id')->limit(10)->get();

@@ -9,7 +9,6 @@ use App\Models\Loading;
 use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use App\Sync\SyncPresenter;
 use Illuminate\Database\Eloquent\Builder;
@@ -54,9 +53,8 @@ class OfflineSnapshotService
             'mills' => $changed(Mill::query())->get()->map(SyncPresenter::mill(...))->values(),
             'buyers' => $changed(Buyer::query())->get()->map(SyncPresenter::buyer(...))->values(),
             'varieties' => $changed(RiceVariety::query())->get()->map(SyncPresenter::variety(...))->values(),
-            'bundles' => $changed(SampleBundle::query())->get()->map(SyncPresenter::bundle(...))->values(),
             'samples' => $changed(Sample::query()->whereIn('id', $sampleUuids->keys()))
-                ->with(['mill:id,uuid', 'variety:id,uuid', 'bundle:id,uuid'])->get()->map(SyncPresenter::sample(...))->values(),
+                ->with(['mill:id,uuid', 'variety:id,uuid'])->get()->map(SyncPresenter::sample(...))->values(),
             'dispatches' => $changed(SampleDispatch::query()->whereIn('id', $dispatchUuids->keys()))
                 ->with(['sample:id,uuid', 'buyer:id,uuid'])->get()->map(SyncPresenter::dispatch(...))->values(),
             'loadings' => $changed(Loading::query()->whereIn('sample_dispatch_id', $dispatchUuids->keys()))
@@ -65,7 +63,7 @@ class OfflineSnapshotService
             // Every uuid the device should still hold, so it can drop records deleted on the server.
             'keep' => [
                 'mills' => Mill::pluck('uuid'), 'buyers' => Buyer::pluck('uuid'), 'varieties' => RiceVariety::pluck('uuid'),
-                'bundles' => SampleBundle::pluck('uuid'), 'samples' => $sampleUuids->values(), 'dispatches' => $dispatchUuids->values(),
+                'samples' => $sampleUuids->values(), 'dispatches' => $dispatchUuids->values(),
                 'loadings' => Loading::whereIn('sample_dispatch_id', $dispatchUuids->keys())->pluck('uuid')->values(),
             ],
         ];

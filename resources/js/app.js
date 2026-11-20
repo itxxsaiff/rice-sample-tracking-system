@@ -4,7 +4,7 @@ import { initImageInputs } from './modules/images';
 import { initPickers } from './modules/picker';
 import { initChoiceLists } from './modules/choices';
 import { initQuickAdd } from './modules/quick-add';
-import { initBundleBuilder } from './modules/bundle';
+import { initSampleRows } from './modules/sample-rows';
 import { initResponseForm } from './modules/response';
 import { initOfflineBridge } from './offline/bridge';
 
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initPickers();
     initChoiceLists();
     initQuickAdd();
-    initBundleBuilder();
+    initSampleRows();
     initResponseForm();
     initOfflineBridge();
 });

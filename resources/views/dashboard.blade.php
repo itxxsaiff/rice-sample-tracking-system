@@ -14,9 +14,9 @@
     <div class="row g-2 g-md-3 mb-4 d-md-none">
         @foreach ([
             [route('samples.create'), 'Add sample', 'basket', 'navy'],
-            [route('bundles.create'), 'New bundle', 'boxes', 'gold'],
             [route('dispatches.create'), 'Dispatch', 'send', 'blue'],
             [route('loading.index'), 'Loading', 'truck', 'teal'],
+            [route('mills.create'), 'Add mill', 'buildings', 'slate'],
         ] as [$href, $label, $icon, $tone])
             <div class="col-3">
                 <a href="{{ $href }}" class="card quick-action p-2"><span class="stat-icon tone-{{ $tone }}"><i class="bi bi-{{ $icon }}"></i></span><span class="small">{{ $label }}</span></a>

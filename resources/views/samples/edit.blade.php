@@ -1,6 +1,6 @@
 <x-layouts.app :title="'Edit '.$sample->sample_number" :back="route('samples.show', $sample)" action-bar>
     <x-page-header :title="'Edit sample '.$sample->sample_number" />
-    <form method="POST" action="{{ route('samples.update', $sample) }}" enctype="multipart/form-data" class="card" novalidate>
+    <form method="POST" action="{{ route('samples.update', $sample) }}" class="card" novalidate>
         @csrf @method('PUT')
         @include('samples._form')
         <div class="action-bar">

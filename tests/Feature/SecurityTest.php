@@ -23,7 +23,7 @@ class SecurityTest extends TestCase
 
     public function test_every_business_route_requires_login(): void
     {
-        foreach (['/', '/samples', '/bundles', '/dispatches', '/loading', '/records', '/mills', '/buyers', '/varieties', '/search', '/lookup/mills', '/settings/users'] as $uri) {
+        foreach (['/', '/samples', '/dispatches', '/loading', '/records', '/mills', '/buyers', '/varieties', '/search', '/lookup/mills', '/settings/users'] as $uri) {
             $this->get($uri)->assertRedirect(route('login'));
         }
     }
@@ -43,13 +43,13 @@ class SecurityTest extends TestCase
         $mill = Mill::factory()->create();
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post(route('samples.store'), [
-            'mill_id' => $mill->id, 'rice_variety_id' => $inactive->id, 'collection_date' => now()->toDateString(),
-        ])->assertSessionHasErrors('rice_variety_id');
+        $this->actingAs($user)->post(route('samples.store'), ['samples' => [
+            ['mill_id' => $mill->id, 'rice_variety_id' => $inactive->id, 'collection_date' => now()->toDateString()],
+        ]])->assertSessionHasErrors('samples.0.rice_variety_id');
 
         $old = Sample::factory()->create(['rice_variety_id' => $inactive->id, 'mill_id' => $mill->id]);
         $this->put(route('samples.update', $old), [
-            'sample_number' => $old->sample_number, 'mill_id' => $mill->id, 'rice_variety_id' => $inactive->id,
+            'mill_id' => $mill->id, 'rice_variety_id' => $inactive->id,
             'collection_date' => now()->toDateString(), 'notes' => 'updated',
         ])->assertSessionHasNoErrors();
     }

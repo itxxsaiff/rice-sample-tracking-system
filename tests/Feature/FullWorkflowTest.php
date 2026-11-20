@@ -9,7 +9,6 @@ use App\Models\Loading;
 use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,7 +18,7 @@ use Tests\TestCase;
 
 /**
  * The client's whole story, end to end, by an employee account:
- * collect samples at two mills in one bundle → send one sample to two
+ * collect five samples at two mills in one form → send one sample to two
  * buyers → A confirms, B rejects → load A's order on two trucks with
  * photos → complete → every history page still shows everything.
  */
@@ -38,13 +37,12 @@ class FullWorkflowTest extends TestCase
         $buyerB = Buyer::factory()->create(['name' => 'Buyer B']);
         $this->actingAs($employee);
 
-        // Bundle #001: two samples from mill A, three from mill B.
+        // One "Add Sample" form with five independent samples: two from mill A, three from mill B.
         $rows = [];
         foreach ([$millA, $millA, $millB, $millB, $millB] as $mill) {
-            $rows[] = ['mill_id' => $mill->id, 'rice_variety_id' => $v1121->id, 'quantity' => 500, 'quantity_unit' => 'g'];
+            $rows[] = ['mill_id' => $mill->id, 'rice_variety_id' => $v1121->id, 'collection_date' => now()->subDays(5)->toDateString(), 'quantity' => 5, 'quantity_unit' => 'kg'];
         }
-        $this->post(route('bundles.store'), ['bundle_date' => now()->subDays(5)->toDateString(), 'samples' => $rows])->assertSessionHasNoErrors();
-        $bundle = SampleBundle::firstOrFail();
+        $this->post(route('samples.store'), ['samples' => $rows])->assertSessionHasNoErrors();
         $this->assertSame(2, $millA->samples()->count());
         $this->assertSame(3, $millB->samples()->count());
 
@@ -91,7 +89,6 @@ class FullWorkflowTest extends TestCase
         $this->get(route('buyers.show', $buyerA))->assertSee($toA->dispatch_number)->assertSee('1,000 maund');
         $this->get(route('buyers.show', $buyerB))->assertSee($toB->dispatch_number)->assertSee('Price not agreed');
         $this->get(route('samples.show', $sample))->assertSee('Buyer A')->assertSee('Buyer B');
-        $this->get(route('bundles.show', $bundle))->assertSee('ABC Rice Mill')->assertSee('XYZ Rice Mill');
         $this->get(route('records.index', ['type' => 'completed']))->assertSee($toA->dispatch_number);
         $this->get(route('records.index', ['type' => 'rejections']))->assertSee($toB->dispatch_number);
         $this->get(route('records.index', ['type' => 'loadings']))->assertSee('TLE-1001')->assertSee('TLE-1002');

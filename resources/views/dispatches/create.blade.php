@@ -19,7 +19,7 @@
                         </div>
                         @error('sample_ids')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         @error('sample_ids.*')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
-                        <p class="form-text mb-0">Tip: open a sample or bundle and tap <strong>Dispatch</strong> to pre-fill this list.</p>
+                        <p class="form-text mb-0">Tip: open a sample and tap <strong>Dispatch</strong> to pre-fill this list.</p>
                     </div>
                 </div>
             </div>

@@ -14,7 +14,7 @@ export function home(ctx) {
         title: 'Dashboard',
         html: `${!isReachable() ? `<div class="alert alert-info d-flex gap-2 align-items-start"><i class="bi bi-wifi-off fs-5"></i><div><strong>You're working offline.</strong> Everything you save stays on this device and syncs automatically when the internet returns.</div></div>` : ''}
         <div class="page-header keep-mobile"><div><h1>Dashboard</h1><p>Data on this device · last synced ${ctx.lastSync ? new Date(ctx.lastSync).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'never'}</p></div></div>
-        <div class="row g-2 g-md-3 mb-4">${tile('#/samples/new', 'Add sample', 'basket', 'navy')}${tile('#/bundles/new', 'New bundle', 'boxes', 'gold')}${tile('#/dispatches/new', 'Dispatch', 'send', 'blue')}${tile('#/loading', 'Loading', 'truck', 'teal')}</div>
+        <div class="row g-2 g-md-3 mb-4">${tile('#/samples/new', 'Add sample', 'basket', 'navy')}${tile('#/dispatches/new', 'Dispatch', 'send', 'blue')}${tile('#/loading', 'Loading', 'truck', 'teal')}${tile('#/mills/new', 'Add mill', 'buildings', 'slate')}</div>
         <div class="row g-3 mb-4">
             ${stat('Awaiting buyer response', pendingDispatches.length, 'gold', '#/dispatches?status=pending')}
             ${stat('Orders to load', toLoad.length, 'blue', '#/loading')}

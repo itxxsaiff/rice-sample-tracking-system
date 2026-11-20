@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Samples\SampleRequest;
+use App\Http\Requests\Samples\StoreSamplesRequest;
 use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Services\SampleService;
 use App\Support\PhotoStorage;
-use App\Support\ReferenceNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,10 +22,10 @@ class SampleController extends Controller
     {
         $this->authorize('viewAny', Sample::class);
 
-        $filters = $request->only(['q', 'mill_id', 'variety_id', 'bundle_id', 'city', 'from', 'to', 'sent']);
+        $filters = $request->only(['q', 'mill_id', 'variety_id', 'city', 'from', 'to', 'sent']);
 
         $samples = Sample::query()
-            ->with(['mill:id,name,city', 'variety:id,name', 'bundle:id,bundle_number'])
+            ->with(['mill:id,name,city', 'variety:id,name'])
             ->withCount('dispatches')
             ->filter($filters)
             ->latest('collection_date')->latest('id')
@@ -45,34 +44,35 @@ class SampleController extends Controller
     {
         $this->authorize('create', Sample::class);
 
-        $sample = new Sample([
-            'collection_date' => now(),
-            'quantity_unit' => 'g',
-            'mill_id' => $request->integer('mill_id') ?: null,
-            'sample_bundle_id' => $request->integer('bundle_id') ?: null,
-        ]);
+        $millId = $request->integer('mill_id') ?: null;
+        $rows = old('samples', [['mill_id' => $millId, 'collection_date' => now()->format('Y-m-d'), 'quantity_unit' => 'kg']]);
+        $millIds = collect($rows)->pluck('mill_id')->filter()->unique();
 
-        return view('samples.create', $this->formData($sample) + [
-            'nextNumber' => ReferenceNumber::peek('sample'),
+        return view('samples.create', [
+            'rows' => $rows,
+            'mills' => Mill::whereIn('id', $millIds)->get()->keyBy('id'),
+            'varieties' => RiceVariety::options(),
         ]);
     }
 
-    public function store(SampleRequest $request): RedirectResponse
+    public function store(StoreSamplesRequest $request): RedirectResponse
     {
-        $sample = $this->samples->create($request->validated(), $request->user());
+        $samples = $this->samples->createMany($request->rows(), $request->user());
 
-        $redirect = $request->input('after') === 'another'
-            ? redirect()->route('samples.create', ['mill_id' => $sample->mill_id, 'bundle_id' => $sample->sample_bundle_id])
-            : redirect()->route('samples.show', $sample);
+        if ($samples->count() === 1) {
+            return redirect()->route('samples.show', $samples->first())
+                ->with('success', "Sample {$samples->first()->sample_number} saved.");
+        }
 
-        return $redirect->with('success', "Sample {$sample->sample_number} saved.");
+        return redirect()->route('samples.index')
+            ->with('success', "{$samples->count()} samples saved ({$samples->first()->sample_number} – {$samples->last()->sample_number}).");
     }
 
     public function show(Sample $sample): View
     {
         $this->authorize('view', $sample);
 
-        $sample->load(['mill', 'variety', 'bundle', 'creator', 'activities.user', 'dispatches' => fn ($q) => $q->with('buyer:id,name,city')->latest('dispatch_date')->latest('id')]);
+        $sample->load(['mill', 'variety', 'creator', 'activities.user', 'dispatches' => fn ($q) => $q->with('buyer:id,name,city')->latest('dispatch_date')->latest('id')]);
 
         return view('samples.show', compact('sample'));
     }
@@ -88,7 +88,7 @@ class SampleController extends Controller
 
     public function update(SampleRequest $request, Sample $sample): RedirectResponse
     {
-        $this->samples->update($sample, $request->validated(), $request->boolean('remove_photo'));
+        $this->samples->update($sample, $request->validated());
 
         return redirect()->route('samples.show', $sample)->with('success', 'Sample updated.');
     }
@@ -118,8 +118,6 @@ class SampleController extends Controller
             'sample' => $sample,
             'selectedMill' => $millId ? Mill::find($millId) : null,
             'varieties' => RiceVariety::options($sample->rice_variety_id),
-            'bundles' => SampleBundle::query()->withCount('samples')->latest('bundle_date')->latest('id')->limit(30)->get()
-                ->when($sample->sample_bundle_id, fn ($c) => $c->contains('id', $sample->sample_bundle_id) ? $c : $c->push(SampleBundle::withCount('samples')->find($sample->sample_bundle_id))),
         ];
     }
 }

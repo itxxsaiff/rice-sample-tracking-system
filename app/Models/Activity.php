@@ -51,7 +51,6 @@ class Activity extends Model
             'mill' => route('mills.show', $this->subject_id),
             'buyer' => route('buyers.show', $this->subject_id),
             'sample' => route('samples.show', $this->subject_id),
-            'bundle' => route('bundles.show', $this->subject_id),
             'dispatch' => route('dispatches.show', $this->subject_id),
             'loading' => route('loadings.show', $this->subject_id),
             default => null,

@@ -10,7 +10,6 @@ use App\Models\LoadingPhoto;
 use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use App\Models\SyncOperation;
 use App\Models\User;
@@ -119,33 +118,44 @@ class OperationsTest extends TestCase
         $this->get(route('loading.index', ['tab' => 'completed']))->assertSee($d->dispatch_number);
     }
 
-    public function test_scenario_2_offline_bundle_with_two_mills(): void
+    public function test_scenario_2_several_offline_samples_from_two_mills(): void
     {
         $millA = Mill::factory()->create();
         $millB = $this->uuid();
         $variety = RiceVariety::factory()->create();
         $this->op('mill.create', ['uuid' => $millB, 'fields' => ['name' => 'New Mill', 'city' => 'Kamoke']])->assertOk();
 
-        $bundle = $this->uuid();
+        $uuids = [];
+        foreach ([$millA->id, $millA->id, $millB, $millB, $millB] as $mill) {
+            $uuids[] = $uuid = $this->uuid();
+            $this->op('sample.create', ['uuid' => $uuid, 'fields' => ['mill_id' => $mill, 'rice_variety_id' => $variety->uuid, 'collection_date' => now()->toDateString(), 'quantity' => 5, 'quantity_unit' => 'kg']])->assertOk();
+        }
+
+        $this->assertSame(2, Sample::where('mill_id', $millA->id)->count());
+        $this->assertSame(3, Sample::where('mill_id', Mill::where('uuid', $millB)->value('id'))->count());
+        $this->assertSame(5, Sample::whereIn('uuid', $uuids)->distinct()->count('sample_number'));
+    }
+
+    public function test_bundle_changes_saved_before_the_update_become_independent_samples(): void
+    {
+        $mill = Mill::factory()->create();
+        $variety = RiceVariety::factory()->create();
         $rows = [];
-        foreach ([$millA->id, $millA->id, $millB, $millB, $millB] as $i => $mill) {
-            $rows["r{$i}"] = ['uuid' => $this->uuid(), 'mill_id' => $mill, 'rice_variety_id' => $variety->uuid, 'quantity' => 500, 'quantity_unit' => 'g'];
+        foreach (range(0, 2) as $i) {
+            $rows["r{$i}"] = ['uuid' => $this->uuid(), 'mill_id' => $mill->id, 'rice_variety_id' => $variety->uuid, 'quantity' => 500, 'quantity_unit' => 'g', 'sample_number' => 'IGNORED'];
         }
+        $payload = ['uuid' => $this->uuid(), 'fields' => ['bundle_number' => 'B-1', 'bundle_date' => now()->subDay()->toDateString(), 'samples' => $rows]];
 
-        $res = $this->op('bundle.create', ['uuid' => $bundle, 'fields' => ['bundle_date' => now()->toDateString(), 'samples' => $rows]])->assertOk();
-        $this->assertCount(6, $res->json('records')); // bundle + 5 samples
-
-        $b = SampleBundle::where('uuid', $bundle)->firstOrFail();
-        $this->assertCount(5, $b->samples);
-        $this->assertSame(2, $b->samples->where('mill_id', $millA->id)->count());
-        $this->assertSame(3, $b->samples->where('mill_id', Mill::where('uuid', $millB)->value('id'))->count());
+        $res = $this->op('bundle.create', $payload)->assertOk();
+        $this->assertCount(3, $res->json('records'));
         foreach ($rows as $row) {
-            $this->assertDatabaseHas('samples', ['uuid' => $row['uuid'], 'sample_bundle_id' => $b->id]);
+            $this->assertDatabaseHas('samples', ['uuid' => $row['uuid'], 'mill_id' => $mill->id, 'collection_date' => now()->subDay()->startOfDay()]);
         }
+        $this->assertSame(['SMP-0001', 'SMP-0002', 'SMP-0003'], Sample::orderBy('id')->pluck('sample_number')->all());
 
-        // Retried bundle op: no duplicates.
-        $this->op('bundle.create', ['uuid' => $bundle, 'fields' => ['bundle_date' => now()->toDateString(), 'samples' => $rows]])->assertOk();
-        $this->assertSame(5, Sample::count());
+        // Retried: no duplicates.
+        $this->op('bundle.create', $payload)->assertOk();
+        $this->assertSame(3, Sample::count());
     }
 
     public function test_scenarios_3_and_4_one_sample_to_two_buyers_with_independent_responses(): void

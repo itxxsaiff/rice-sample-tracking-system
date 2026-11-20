@@ -54,7 +54,7 @@ class MillController extends Controller
         $this->authorize('view', $mill);
 
         $samples = $mill->samples()
-            ->with(['variety:id,name', 'bundle:id,bundle_number'])
+            ->with(['variety:id,name'])
             ->when($request->filled('variety_id'), fn ($q) => $q->where('rice_variety_id', $request->integer('variety_id')))
             ->latest('collection_date')->latest('id')
             ->paginate(15)->withQueryString();

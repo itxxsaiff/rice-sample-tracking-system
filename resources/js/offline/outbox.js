@@ -37,21 +37,14 @@ async function applyLocally(db, op) {
             await db.varieties.put({ uuid: p.uuid, id: null, name: f.name, is_active: true, version: 1, ...pending });
             break;
         case 'sample.create':
-            await db.samples.put(sampleRecord(p.uuid, f, f.sample_bundle_id || null, pending));
+            await db.samples.put(sampleRecord(p.uuid, f, pending));
             break;
-        case 'bundle.create':
-            await db.bundles.put({ uuid: p.uuid, id: null, bundle_number: f.bundle_number || null, bundle_date: f.bundle_date, notes: f.notes || null, version: 1, ...pending });
+        case 'bundle.create': case 'bundle.add_samples':
+            // Saved before bundles were removed: the server stores these as independent samples.
             for (const row of Object.values(f.samples || {})) {
-                await db.samples.put(sampleRecord(row.uuid, { ...row, collection_date: row.collection_date || f.bundle_date }, p.uuid, pending));
+                await db.samples.put(sampleRecord(row.uuid, { ...row, collection_date: row.collection_date || f.bundle_date || today() }, pending));
             }
             break;
-        case 'bundle.add_samples': {
-            const bundle = await db.bundles.get(p.target);
-            for (const row of Object.values(f.samples || {})) {
-                await db.samples.put(sampleRecord(row.uuid, { ...row, collection_date: row.collection_date || bundle?.bundle_date }, p.target, pending));
-            }
-            break;
-        }
         case 'dispatch.create':
             for (const pair of p.pairs) {
                 await db.dispatches.put({
@@ -100,10 +93,15 @@ async function applyLocally(db, op) {
     }
 }
 
-function sampleRecord(uuidValue, f, bundleUuid, pending) {
+function today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function sampleRecord(uuidValue, f, pending) {
     return {
-        uuid: uuidValue, id: null, sample_number: f.sample_number || null,
-        mill_uuid: f.mill_id, variety_uuid: f.rice_variety_id, bundle_uuid: bundleUuid,
+        uuid: uuidValue, id: null, sample_number: null,
+        mill_uuid: f.mill_id, variety_uuid: f.rice_variety_id,
         collection_date: f.collection_date, quantity: f.quantity === '' || f.quantity == null ? null : Number(f.quantity),
         quantity_unit: f.quantity === '' || f.quantity == null ? null : f.quantity_unit, notes: f.notes || null,
         has_photo: false, version: 1, created_at: now(), ...pending,
@@ -124,9 +122,8 @@ function graph(op) {
         case 'mill.update': case 'buyer.update': case 'dispatch.respond': case 'loading.loaded': case 'order.complete':
             add(deps, p.target); break;
         case 'sample.create':
-            add(creates, p.uuid); add(deps, f.mill_id); add(deps, f.rice_variety_id); add(deps, f.sample_bundle_id); break;
-        case 'bundle.create': case 'bundle.add_samples':
-            add(op.type === 'bundle.create' ? creates : deps, op.type === 'bundle.create' ? p.uuid : p.target);
+            add(creates, p.uuid); add(deps, f.mill_id); add(deps, f.rice_variety_id); break;
+        case 'bundle.create': case 'bundle.add_samples': // legacy
             Object.values(f.samples || {}).forEach((row) => { add(creates, row.uuid); add(deps, row.mill_id); add(deps, row.rice_variety_id); });
             break;
         case 'dispatch.create':

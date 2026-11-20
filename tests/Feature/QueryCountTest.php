@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Loading;
 use App\Models\Sample;
-use App\Models\SampleBundle;
 use App\Models\SampleDispatch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,8 +21,7 @@ class QueryCountTest extends TestCase
 
     public function test_list_pages_do_not_issue_per_row_queries(): void
     {
-        $bundle = SampleBundle::factory()->create();
-        Sample::factory()->count(6)->create(['sample_bundle_id' => $bundle->id]);
+        Sample::factory()->count(6)->create();
         SampleDispatch::factory()->count(4)->create();
         SampleDispatch::factory()->count(4)->confirmed()->create();
         SampleDispatch::factory()->count(3)->rejected()->create();
@@ -34,7 +32,7 @@ class QueryCountTest extends TestCase
         $this->actingAs(User::factory()->admin()->create());
 
         $pages = [
-            route('dashboard'), route('samples.index'), route('bundles.index'), route('bundles.show', $bundle),
+            route('dashboard'), route('samples.index'),
             route('dispatches.index'), route('loading.index'), route('loading.index', ['tab' => 'in_progress']),
             route('records.index'), route('records.index', ['type' => 'loadings']), route('buyers.show', $buyer),
             route('mills.show', $mill), route('mills.index'), route('buyers.index'), route('search', ['q' => 'a']),

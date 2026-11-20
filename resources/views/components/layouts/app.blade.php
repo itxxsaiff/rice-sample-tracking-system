@@ -65,7 +65,7 @@
     <nav class="bottom-nav" aria-label="Primary">
         <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])><i class="bi bi-grid-1x2{{ request()->routeIs('dashboard') ? '-fill' : '' }}"></i>Home</a>
         @if (Route::has('samples.index'))
-            <a href="{{ route('samples.index') }}" @class(['active' => request()->routeIs('samples.*', 'bundles.*')])><i class="bi bi-basket{{ request()->routeIs('samples.*', 'bundles.*') ? '-fill' : '' }}"></i>Samples</a>
+            <a href="{{ route('samples.index') }}" @class(['active' => request()->routeIs('samples.*')])><i class="bi bi-basket{{ request()->routeIs('samples.*') ? '-fill' : '' }}"></i>Samples</a>
         @endif
         <div class="fab-wrap flex-fill d-flex justify-content-center">
             <button type="button" class="fab" data-bs-toggle="offcanvas" data-bs-target="#quickActions" aria-label="Quick actions"><i class="bi bi-plus-lg"></i></button>
@@ -106,8 +106,7 @@
         </div>
         <div class="list-group list-group-flush pb-2">
             @foreach ([
-                ['samples.create', 'Add sample', 'Record a sample collected at a mill', 'basket', 'navy'],
-                ['bundles.create', 'New bundle', 'Add several samples together', 'boxes', 'gold'],
+                ['samples.create', 'Add sample', 'Record one or more samples collected at mills', 'basket', 'navy'],
                 ['dispatches.create', 'Dispatch samples', 'Send samples to buyers', 'send', 'blue'],
                 ['loading.index', 'Record loading', 'Trucks, quantities and photos', 'truck', 'teal'],
                 ['mills.create', 'Add rice mill', 'New mill profile', 'buildings', 'slate'],

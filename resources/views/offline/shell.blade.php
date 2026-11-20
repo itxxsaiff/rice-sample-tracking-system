@@ -65,7 +65,6 @@
         <div class="offcanvas-header pb-2"><h5 class="offcanvas-title fw-semibold">Quick actions</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
         <div class="list-group list-group-flush pb-2">
             <a href="#/samples/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-navy"><i class="bi bi-basket"></i></span><span>Add sample</span></a>
-            <a href="#/bundles/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-gold"><i class="bi bi-boxes"></i></span><span>New bundle</span></a>
             <a href="#/dispatches/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-blue"><i class="bi bi-send"></i></span><span>Dispatch samples</span></a>
             <a href="#/loading" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-teal"><i class="bi bi-truck"></i></span><span>Record loading</span></a>
             <a href="#/mills/new" data-bs-dismiss="offcanvas" class="list-group-item list-group-item-action"><span class="stat-icon tone-slate"><i class="bi bi-buildings"></i></span><span>Add rice mill</span></a>

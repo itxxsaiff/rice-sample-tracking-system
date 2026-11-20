@@ -6,7 +6,6 @@
         ],
         'Samples' => [
             ['samples.index', 'Samples', 'basket', 'samples.*'],
-            ['bundles.index', 'Bundles', 'boxes', 'bundles.*'],
         ],
         'Orders' => [
             ['dispatches.index', 'Dispatches', 'send', 'dispatches.*'],

@@ -4,7 +4,7 @@
         <thead><tr>
             <th>Sample</th>
             @unless ($hideMill)<th>Mill</th>@endunless
-            <th>Variety</th><th>Collected</th><th>Quantity</th><th>Bundle</th>@isset($samples->first()->dispatches_count)<th>Sent to</th>@endisset<th class="text-end"></th>
+            <th>Variety</th><th>Collected</th><th>Quantity</th>@isset($samples->first()->dispatches_count)<th>Sent to</th>@endisset<th class="text-end"></th>
         </tr></thead>
         <tbody>
         @foreach ($samples as $sample)
@@ -28,7 +28,6 @@
                 <td data-label="Variety"><span class="badge text-bg-light border fw-semibold">{{ $sample->variety->name }}</span></td>
                 <td data-label="Collected"><span>{{ $sample->collection_date->format('d M Y') }}</span></td>
                 <td data-label="Quantity"><span>{{ $sample->quantityLabel() ?? '—' }}</span></td>
-                <td data-label="Bundle"><span>@if ($sample->bundle)<a href="{{ route('bundles.show', $sample->sample_bundle_id) }}" class="mono">{{ $sample->bundle->bundle_number }}</a>@else — @endif</span></td>
                 @isset($sample->dispatches_count)
                     <td data-label="Sent to"><span>@if ($sample->dispatches_count)<span class="badge rounded-pill text-bg-light border">{{ $sample->dispatches_count }} buyer{{ $sample->dispatches_count > 1 ? 's' : '' }}</span>@else<span class="text-muted small">Not sent</span>@endif</span></td>
                 @endisset

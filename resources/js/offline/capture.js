@@ -13,7 +13,7 @@ import { checkServer } from './sync';
  * same as the sync API, so the server validates them with the same rules.
  */
 
-const SKIP = new Set(['_token', '_method', 'after', 'remove_photo']);
+const SKIP = new Set(['_token', '_method', 'after']);
 
 function formFields(form) {
     const fields = {};
@@ -53,39 +53,26 @@ async function build(db, form) {
         case 'mill.update': case 'buyer.update':
             return { op: { type, payload: { target, base_version: version, fields: f }, summary: `Edit ${type.split('.')[0]} ${f.name || ''}`.trim() }, open: `/${type.split('.')[0]}s/${target}` };
         case 'sample.create': {
-            const id = uuid();
-            const fields = {
-                mill_id: await toUuid(db, 'mills', f.mill_id), rice_variety_id: await toUuid(db, 'varieties', f.rice_variety_id),
-                sample_bundle_id: await toUuid(db, 'bundles', f.sample_bundle_id), collection_date: f.collection_date,
-                sample_number: nullable(f.sample_number?.toUpperCase()), quantity: nullable(f.quantity), quantity_unit: nullable(f.quantity) === null ? null : f.quantity_unit,
-                notes: nullable(f.notes),
-            };
-            const photo = files(form, 'photo')[0];
-            return {
-                op: { type, payload: { uuid: id, fields }, summary: 'New sample', photos: photo ? [{ uuid: uuid(), blob: photo, name: photo.name, target_type: 'sample', target: id }] : [] },
-                open: `/samples/${id}`,
-            };
-        }
-        case 'bundle.create': {
-            const id = uuid();
-            const rows = {};
-            const photos = [];
+            // One independent sample per row of the "Add Sample" form.
             const keys = new Set([...new FormData(form).keys()].map((k) => k.match(/^samples\[([^\]]+)\]/)?.[1]).filter(Boolean));
+            const ops = [];
             for (const key of keys) {
                 const g = (name) => f[`samples[${key}][${name}]`];
-                const sampleUuid = uuid();
-                rows[key] = {
-                    uuid: sampleUuid, mill_id: await toUuid(db, 'mills', g('mill_id')), rice_variety_id: await toUuid(db, 'varieties', g('rice_variety_id')),
-                    quantity: nullable(g('quantity')), quantity_unit: nullable(g('quantity')) === null ? null : g('quantity_unit'),
-                    sample_number: nullable(g('sample_number')?.toUpperCase()), collection_date: nullable(g('collection_date')) || f.bundle_date, notes: nullable(g('notes')),
-                };
-                const photo = files(form, `samples[${key}][photo]`)[0];
-                if (photo) photos.push({ uuid: uuid(), blob: photo, name: photo.name, target_type: 'sample', target: sampleUuid });
+                const id = uuid();
+                ops.push({
+                    type,
+                    payload: {
+                        uuid: id,
+                        fields: {
+                            mill_id: await toUuid(db, 'mills', g('mill_id')), rice_variety_id: await toUuid(db, 'varieties', g('rice_variety_id')),
+                            collection_date: g('collection_date'), quantity: nullable(g('quantity')), quantity_unit: nullable(g('quantity')) === null ? null : g('quantity_unit'),
+                            notes: nullable(g('notes')),
+                        },
+                    },
+                    summary: 'New sample',
+                });
             }
-            return {
-                op: { type, payload: { uuid: id, fields: { bundle_number: nullable(f.bundle_number?.toUpperCase()), bundle_date: f.bundle_date, notes: nullable(f.notes), samples: rows } }, summary: `New bundle with ${keys.size} sample(s)`, photos },
-                open: `/bundles/${id}`,
-            };
+            return { ops, open: ops.length === 1 ? `/samples/${ops[0].payload.uuid}` : '/samples' };
         }
         case 'dispatch.create': {
             const samples = await Promise.all((f.sample_ids || []).map((s) => toUuid(db, 'samples', s)));
@@ -147,7 +134,7 @@ export function initFormCapture() {
         const built = await build(db, form);
         if (!built) return;
 
-        await enqueue(db, built.op);
+        for (const op of built.ops || [built.op]) await enqueue(db, op);
         if (built.complete) {
             await enqueue(db, { type: 'order.complete', payload: { target: form.dataset.offlineTarget }, summary: 'Complete order' });
         }
