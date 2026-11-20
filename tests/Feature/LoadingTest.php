@@ -44,7 +44,7 @@ class LoadingTest extends TestCase
 
         $this->actingAs($this->user)->put(route('dispatches.respond.update', $dispatch), [
             'status' => 'confirmed', 'confirmed_quantity' => 300, 'confirmed_quantity_unit' => 'maund', 'rate' => 9000,
-            'rate_unit' => 'per_maund', 'packing_type' => 'Jute bag', 'confirmation_date' => now()->toDateString(),
+            'rate_unit' => 'per_maund', 'packing_type' => '25 kg', 'confirmation_date' => now()->toDateString(),
         ]);
 
         $this->get(route('loading.index', ['tab' => 'pending']))->assertSee($dispatch->dispatch_number);
@@ -204,7 +204,7 @@ class LoadingTest extends TestCase
     {
         return array_merge([
             'truck_number' => 'les 4521', 'loading_date' => now()->toDateString(), 'quantity' => 250, 'quantity_unit' => 'maund',
-            'bag_count' => 500, 'packing_type' => 'PP bag', 'receiver_name' => 'Bilal', 'driver_name' => 'Aslam', 'driver_phone' => '03001234567',
+            'bag_count' => 500, 'packing_type' => '50 kg', 'receiver_name' => 'Bilal', 'driver_name' => 'Aslam', 'driver_phone' => '03001234567',
             'action' => 'save',
         ], $overrides);
     }

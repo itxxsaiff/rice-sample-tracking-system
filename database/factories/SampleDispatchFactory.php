@@ -33,7 +33,7 @@ class SampleDispatchFactory extends Factory
             'confirmed_quantity_unit' => 'maund',
             'rate' => 9500,
             'rate_unit' => 'per_maund',
-            'packing_type' => 'PP bag',
+            'packing_type' => '50 kg',
             'confirmation_date' => now()->format('Y-m-d'),
             'responded_at' => now(),
             'loading_status' => LoadingStatus::Pending,

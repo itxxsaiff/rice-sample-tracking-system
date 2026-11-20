@@ -40,14 +40,14 @@ class FullWorkflowTest extends TestCase
         // One "Add Sample" form with five independent samples: two from mill A, three from mill B.
         $rows = [];
         foreach ([$millA, $millA, $millB, $millB, $millB] as $mill) {
-            $rows[] = ['mill_id' => $mill->id, 'rice_variety_id' => $v1121->id, 'collection_date' => now()->subDays(5)->toDateString(), 'quantity' => 5, 'quantity_unit' => 'kg'];
+            $rows[] = ['mill_id' => $mill->id, 'rice_variety_id' => $v1121->id, 'collection_date' => now()->subDays(5)->toDateString()];
         }
         $this->post(route('samples.store'), ['samples' => $rows])->assertSessionHasNoErrors();
         $this->assertSame(2, $millA->samples()->count());
         $this->assertSame(3, $millB->samples()->count());
 
-        // Sample SMP-0001 is sent to Buyer A and Buyer B.
-        $sample = Sample::where('sample_number', 'SMP-0001')->firstOrFail();
+        // Sample SMP-0255 is sent to Buyer A and Buyer B.
+        $sample = Sample::where('sample_number', 'SMP-0255')->firstOrFail();
         $this->post(route('dispatches.store'), [
             'sample_ids' => [$sample->id], 'buyer_ids' => [$buyerA->id, $buyerB->id], 'dispatch_date' => now()->subDays(4)->toDateString(),
         ])->assertSessionHasNoErrors();
@@ -57,7 +57,7 @@ class FullWorkflowTest extends TestCase
         // Buyer A confirms, Buyer B rejects.
         $this->put(route('dispatches.respond.update', $toA), [
             'status' => 'confirmed', 'confirmed_quantity' => 1000, 'confirmed_quantity_unit' => 'maund', 'rate' => 9500,
-            'rate_unit' => 'per_maund', 'packing_type' => 'PP bag', 'packing_details' => '50 kg bags', 'confirmation_date' => now()->subDays(3)->toDateString(),
+            'rate_unit' => 'per_maund', 'packing_type' => '50 kg', 'packing_details' => '50 kg bags', 'confirmation_date' => now()->subDays(3)->toDateString(),
         ])->assertSessionHasNoErrors();
         $this->put(route('dispatches.respond.update', $toB), [
             'status' => 'rejected', 'rejection_date' => now()->subDays(3)->toDateString(),
@@ -85,7 +85,7 @@ class FullWorkflowTest extends TestCase
         $this->assertSame(DispatchStatus::Rejected, $toB->fresh()->status);
 
         // Permanent history is intact everywhere.
-        $this->get(route('mills.show', $millA))->assertSee('SMP-0001')->assertSee('SMP-0002');
+        $this->get(route('mills.show', $millA))->assertSee('SMP-0255')->assertSee('SMP-0256');
         $this->get(route('buyers.show', $buyerA))->assertSee($toA->dispatch_number)->assertSee('1,000 maund');
         $this->get(route('buyers.show', $buyerB))->assertSee($toB->dispatch_number)->assertSee('Rejected');
         $this->get(route('samples.show', $sample))->assertSee('Buyer A')->assertSee('Buyer B');

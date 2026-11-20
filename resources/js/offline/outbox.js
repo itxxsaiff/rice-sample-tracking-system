@@ -101,8 +101,9 @@ function sampleRecord(uuidValue, f, pending) {
     return {
         uuid: uuidValue, id: null, sample_number: null,
         mill_uuid: f.mill_id, variety_uuid: f.rice_variety_id,
-        collection_date: f.collection_date, quantity: f.quantity === '' || f.quantity == null ? null : Number(f.quantity),
-        quantity_unit: f.quantity === '' || f.quantity == null ? null : f.quantity_unit, notes: f.notes || null,
+        // Same default as the server (2 kg) unless an older change carried its own amount.
+        collection_date: f.collection_date, quantity: f.quantity === '' || f.quantity == null ? 2 : Number(f.quantity),
+        quantity_unit: f.quantity === '' || f.quantity == null ? 'kg' : f.quantity_unit, notes: f.notes || null,
         has_photo: false, version: 1, created_at: now(), ...pending,
     };
 }

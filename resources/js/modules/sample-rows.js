@@ -28,12 +28,10 @@ export function initSampleRows() {
         wrapper.innerHTML = template.innerHTML.replaceAll('__KEY__', nextKey++).trim();
         const row = wrapper.firstElementChild;
 
-        // Same collection day and unit as the row above saves taps; mill and variety are chosen per sample.
+        // Same collection day as the row above saves taps; mill and variety are chosen per sample.
         if (previous) {
             const date = previous.querySelector('[data-row-date]')?.value;
-            const unit = previous.querySelector('[data-unit-select]')?.value;
             if (date) row.querySelector('[data-row-date]').value = date;
-            if (unit) row.querySelector('[data-unit-select]').value = unit;
         }
 
         container.appendChild(row);

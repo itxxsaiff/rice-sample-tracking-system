@@ -21,9 +21,10 @@ class RespondDispatchRequest extends FormRequest
             'status' => ['required', Rule::in(['confirmed', 'rejected'])],
 
             'confirmed_quantity' => [Rule::requiredIf($confirmed), 'nullable', 'numeric', 'gt:0', 'max:9999999999'],
-            'confirmed_quantity_unit' => [Rule::requiredIf($confirmed), 'nullable', Rule::in(array_keys(config('rice.quantity_units')))],
+            // Always maund / per maund now; the fields are only sent by changes saved on a phone before that.
+            'confirmed_quantity_unit' => ['nullable', Rule::in(array_keys(config('rice.quantity_units')))],
             'rate' => [Rule::requiredIf($confirmed), 'nullable', 'numeric', 'gt:0', 'max:9999999999'],
-            'rate_unit' => [Rule::requiredIf($confirmed), 'nullable', Rule::in(array_keys(config('rice.rate_units')))],
+            'rate_unit' => ['nullable', Rule::in(array_keys(config('rice.rate_units')))],
             'packing_type' => [Rule::requiredIf($confirmed), 'nullable', Rule::in(array_keys(config('rice.packing_types')))],
             'packing_details' => ['nullable', 'string', 'max:2000'],
             'confirmation_date' => [Rule::requiredIf($confirmed), 'nullable', 'date', 'after_or_equal:'.$dispatchDate, 'before_or_equal:today'],
@@ -45,8 +46,8 @@ class RespondDispatchRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'confirmed_quantity' => 'confirmed quantity', 'confirmed_quantity_unit' => 'quantity unit',
-            'rate_unit' => 'rate unit', 'packing_type' => 'packing type',
+            'confirmed_quantity' => 'quantity (maund)', 'rate' => 'rate per maund',
+            'packing_type' => 'packing',
         ];
     }
 }

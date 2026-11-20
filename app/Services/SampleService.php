@@ -86,8 +86,10 @@ class SampleService
         }
         $sample->created_by = $user->id;
 
+        // The amount collected is always the same (2 kg); only older offline changes may carry their own.
         if ($sample->quantity === null) {
-            $sample->quantity_unit = null;
+            $sample->quantity = config('rice.sample_default.quantity');
+            $sample->quantity_unit = config('rice.sample_default.unit');
         }
 
         $sample->save();

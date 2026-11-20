@@ -45,7 +45,7 @@ class SampleController extends Controller
         $this->authorize('create', Sample::class);
 
         $millId = $request->integer('mill_id') ?: null;
-        $rows = old('samples', [['mill_id' => $millId, 'collection_date' => now()->format('Y-m-d'), 'quantity_unit' => 'kg']]);
+        $rows = old('samples', [['mill_id' => $millId, 'collection_date' => now()->format('Y-m-d')]]);
         $millIds = collect($rows)->pluck('mill_id')->filter()->unique();
 
         return view('samples.create', [

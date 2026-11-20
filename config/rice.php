@@ -8,7 +8,10 @@
 
 return [
 
-    // Units for the small physical sample collected at the mill.
+    // Every sample is recorded as this amount (the form no longer asks for it).
+    'sample_default' => ['quantity' => 2, 'unit' => 'kg'],
+
+    // Units for the small physical sample collected at the mill (older samples may use any of these).
     'sample_units' => [
         'g' => 'Grams (g)',
         'kg' => 'Kilograms (kg)',
@@ -32,15 +35,14 @@ return [
         'per_bag' => '/ Bag',
     ],
 
+    // Confirmed orders are always in maunds at a rate per maund.
+    'order_unit' => 'maund',
+    'order_rate_unit' => 'per_maund',
+
+    // Packing = bag size in kg. Older orders keep whatever text they were saved with.
     'packing_types' => [
-        'PP bag' => 'PP bag',
-        'Jute bag' => 'Jute bag',
-        'Non-woven bag' => 'Non-woven bag',
-        'BOPP bag' => 'BOPP bag',
-        'Cotton bag' => 'Cotton bag',
-        'Bulk / loose' => 'Bulk / loose',
-        'Buyer packing' => "Buyer's own packing",
-        'Other' => 'Other',
+        '5 kg' => '5 kg', '10 kg' => '10 kg', '15 kg' => '15 kg', '20 kg' => '20 kg',
+        '25 kg' => '25 kg', '40 kg' => '40 kg', '50 kg' => '50 kg', '100 kg' => '100 kg',
     ],
 
     // Suggestions only (rice-belt and trading cities); any city can be typed.
@@ -49,6 +51,11 @@ return [
         'Mandi Bahauddin', 'Gujrat', 'Faisalabad', 'Okara', 'Kasur', 'Nankana Sahib', 'Pakpattan',
         'Sahiwal', 'Multan', 'Bahawalpur', 'Karachi', 'Hyderabad', 'Larkana', 'Sukkur', 'Shikarpur',
         'Jacobabad', 'Dera Murad Jamali', 'Islamabad', 'Rawalpindi', 'Quetta', 'Peshawar',
+    ],
+
+    // First number of each series (numbers already used are never repeated).
+    'number_start' => [
+        'sample' => (int) env('SAMPLE_NUMBER_START', 255),
     ],
 
     // Reference number prefixes.

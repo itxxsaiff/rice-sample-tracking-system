@@ -70,7 +70,7 @@ class OperationsTest extends TestCase
         $first = $this->op('sample.create', $payload, $opUuid)->assertOk()->assertJson(['status' => 'applied', 'replayed' => false]);
         $this->assertSame('samples', $first->json('records.0.type'));
         $this->assertSame($sampleUuid, $first->json('records.0.record.uuid'));
-        $this->assertSame('SMP-0001', $first->json('records.0.record.sample_number'));
+        $this->assertSame('SMP-0255', $first->json('records.0.record.sample_number'));
 
         // Retry of the same operation (response lost) and a re-send under a new op id: still one sample.
         $this->op('sample.create', $payload, $opUuid)->assertOk()->assertJson(['replayed' => true]);
@@ -95,7 +95,7 @@ class OperationsTest extends TestCase
         $this->op('dispatch.create', ['fields' => ['dispatch_date' => now()->toDateString()], 'pairs' => [['uuid' => $dispatch, 'sample' => $sample, 'buyer' => $buyer]]])->assertOk();
         $this->op('dispatch.respond', ['target' => $dispatch, 'base_version' => 1, 'fields' => [
             'status' => 'confirmed', 'confirmed_quantity' => 300, 'confirmed_quantity_unit' => 'maund', 'rate' => 9000,
-            'rate_unit' => 'per_maund', 'packing_type' => 'PP bag', 'confirmation_date' => now()->toDateString(),
+            'rate_unit' => 'per_maund', 'packing_type' => '50 kg', 'confirmation_date' => now()->toDateString(),
         ]])->assertOk();
         $this->op('loading.create', ['uuid' => $loading, 'target' => $dispatch, 'fields' => [
             'truck_number' => 'tle 1', 'loading_date' => now()->toDateString(), 'quantity' => 300, 'quantity_unit' => 'maund', 'action' => 'loaded',
@@ -151,7 +151,7 @@ class OperationsTest extends TestCase
         foreach ($rows as $row) {
             $this->assertDatabaseHas('samples', ['uuid' => $row['uuid'], 'mill_id' => $mill->id, 'collection_date' => now()->subDay()->startOfDay()]);
         }
-        $this->assertSame(['SMP-0001', 'SMP-0002', 'SMP-0003'], Sample::orderBy('id')->pluck('sample_number')->all());
+        $this->assertSame(['SMP-0255', 'SMP-0256', 'SMP-0257'], Sample::orderBy('id')->pluck('sample_number')->all());
 
         // Retried: no duplicates.
         $this->op('bundle.create', $payload)->assertOk();
@@ -172,7 +172,7 @@ class OperationsTest extends TestCase
 
         $this->op('dispatch.respond', ['target' => $toA, 'base_version' => 1, 'fields' => [
             'status' => 'confirmed', 'confirmed_quantity' => 100, 'confirmed_quantity_unit' => 'ton', 'rate' => 250000,
-            'rate_unit' => 'per_ton', 'packing_type' => 'Jute bag', 'confirmation_date' => now()->toDateString(),
+            'rate_unit' => 'per_ton', 'packing_type' => '25 kg', 'confirmation_date' => now()->toDateString(),
         ]])->assertOk();
         $this->op('dispatch.respond', ['target' => $toB, 'base_version' => 1, 'fields' => [
             'status' => 'rejected', 'rejection_date' => now()->toDateString(),
@@ -251,7 +251,7 @@ class OperationsTest extends TestCase
 
         $mine = ['target' => $dispatch->uuid, 'base_version' => 1, 'fields' => [
             'status' => 'confirmed', 'confirmed_quantity' => 50, 'confirmed_quantity_unit' => 'ton', 'rate' => 1000,
-            'rate_unit' => 'per_ton', 'packing_type' => 'PP bag', 'confirmation_date' => now()->toDateString(),
+            'rate_unit' => 'per_ton', 'packing_type' => '50 kg', 'confirmation_date' => now()->toDateString(),
         ]];
         $this->op('dispatch.respond', $mine)->assertStatus(409)->assertJsonPath('server.record.status', 'rejected');
 

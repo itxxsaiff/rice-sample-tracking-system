@@ -103,9 +103,9 @@ class DispatchService
             if ($target === DispatchStatus::Confirmed) {
                 $dispatch->forceFill([
                     'confirmed_quantity' => $data['confirmed_quantity'],
-                    'confirmed_quantity_unit' => $data['confirmed_quantity_unit'],
+                    'confirmed_quantity_unit' => $data['confirmed_quantity_unit'] ?? config('rice.order_unit'),
                     'rate' => $data['rate'],
-                    'rate_unit' => $data['rate_unit'],
+                    'rate_unit' => $data['rate_unit'] ?? config('rice.order_rate_unit'),
                     'packing_type' => $data['packing_type'],
                     'packing_details' => $data['packing_details'] ?? null,
                     'confirmation_date' => $data['confirmation_date'],

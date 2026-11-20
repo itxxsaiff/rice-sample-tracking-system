@@ -6,8 +6,10 @@ use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
 use App\Models\User;
+use App\Support\ReferenceNumber;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -35,14 +37,14 @@ class SampleTest extends TestCase
         $variety = RiceVariety::factory()->create(['name' => '1121']);
 
         $this->actingAs($this->user)->post(route('samples.store'), [
-            'samples' => [$this->row($mill, $variety, ['quantity' => 5, 'quantity_unit' => 'kg'])],
+            'samples' => [$this->row($mill, $variety)],
         ])->assertSessionHasNoErrors();
 
         $sample = Sample::firstOrFail();
-        $this->assertSame('SMP-0001', $sample->sample_number);
+        $this->assertSame('SMP-0255', $sample->sample_number);
         $this->assertTrue($sample->mill->is($mill));
         $this->assertSame('Hafizabad', $sample->city());
-        $this->assertSame('kg', $sample->quantity_unit);
+        $this->assertSame('2 kg', $sample->quantityLabel()); // every sample is 2 kg
         $this->assertSame($this->user->id, $sample->created_by);
         $this->assertDatabaseHas('activities', ['subject_type' => 'sample', 'subject_id' => $sample->id, 'event' => 'created']);
     }
@@ -55,13 +57,13 @@ class SampleTest extends TestCase
         $v1509 = RiceVariety::factory()->create();
 
         $this->actingAs($this->user)->post(route('samples.store'), ['samples' => [
-            'r0' => $this->row($millA, $v1121, ['quantity' => 2, 'quantity_unit' => 'kg']),
+            'r0' => $this->row($millA, $v1121),
             'r3' => $this->row($millB, $v1509, ['notes' => 'second']),
-        ]])->assertRedirect(route('samples.index'))->assertSessionHas('success', '2 samples saved (SMP-0001 – SMP-0002).');
+        ]])->assertRedirect(route('samples.index'))->assertSessionHas('success', '2 samples saved (SMP-0255 – SMP-0256).');
 
-        $this->assertSame(['SMP-0001', 'SMP-0002'], Sample::orderBy('id')->pluck('sample_number')->all());
+        $this->assertSame(['SMP-0255', 'SMP-0256'], Sample::orderBy('id')->pluck('sample_number')->all());
         $this->assertSame([$millA->id, $millB->id], Sample::orderBy('id')->pluck('mill_id')->all());
-        $this->assertNull(Sample::where('mill_id', $millB->id)->value('quantity'));
+        $this->assertSame(['2 kg', '2 kg'], Sample::orderBy('id')->get()->map->quantityLabel()->all());
     }
 
     public function test_one_invalid_row_saves_nothing(): void
@@ -71,8 +73,8 @@ class SampleTest extends TestCase
 
         $this->actingAs($this->user)->post(route('samples.store'), ['samples' => [
             'r0' => $this->row($mill, $variety),
-            'r1' => ['collection_date' => now()->addDays(3)->toDateString(), 'quantity' => 10],
-        ]])->assertSessionHasErrors(['samples.r1.mill_id', 'samples.r1.rice_variety_id', 'samples.r1.collection_date', 'samples.r1.quantity_unit']);
+            'r1' => ['collection_date' => now()->addDays(3)->toDateString()],
+        ]])->assertSessionHasErrors(['samples.r1.mill_id', 'samples.r1.rice_variety_id', 'samples.r1.collection_date']);
 
         $this->assertSame(0, Sample::count());
     }
@@ -85,14 +87,30 @@ class SampleTest extends TestCase
         $this->actingAs($this->user)->post(route('samples.store'), ['samples' => [$this->row($mill, $variety, ['sample_number' => 'MY-OWN', 'photo' => UploadedFile::fake()->image('x.jpg')])]]);
         $this->post(route('samples.store'), ['samples' => [$this->row($mill, $variety)]]);
 
-        $this->assertSame(['SMP-0001', 'SMP-0002'], Sample::orderBy('id')->pluck('sample_number')->all());
+        $this->assertSame(['SMP-0255', 'SMP-0256'], Sample::orderBy('id')->pluck('sample_number')->all());
         $this->assertNull(Sample::first()->photo_path); // sample photos are no longer taken
         Storage::disk('local')->assertDirectoryEmpty('/');
 
         // Editing never changes the number either.
         $sample = Sample::first();
         $this->put(route('samples.update', $sample), [...$this->row($mill, $variety), 'sample_number' => 'CHANGED'])->assertSessionHasNoErrors();
-        $this->assertSame('SMP-0001', $sample->fresh()->sample_number);
+        $this->assertSame('SMP-0255', $sample->fresh()->sample_number);
+    }
+
+    public function test_sample_numbers_start_at_255_and_continue_from_existing_ones(): void
+    {
+        $mill = Mill::factory()->create();
+        $variety = RiceVariety::factory()->create();
+        $this->actingAs($this->user);
+
+        $this->assertSame('SMP-0255', ReferenceNumber::peek('sample'));
+        $this->post(route('samples.store'), ['samples' => [$this->row($mill, $variety)]]);
+        $this->assertSame('SMP-0255', Sample::latest('id')->value('sample_number'));
+
+        // A counter already past 255 simply carries on.
+        DB::table('reference_sequences')->where('key', 'sample')->update(['value' => 400]);
+        $this->post(route('samples.store'), ['samples' => [$this->row($mill, $variety)]]);
+        $this->assertSame('SMP-0401', Sample::latest('id')->value('sample_number'));
     }
 
     public function test_existing_sample_photo_is_served_to_signed_in_users_only(): void

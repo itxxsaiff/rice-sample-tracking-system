@@ -65,7 +65,7 @@ async function build(db, form) {
                         uuid: id,
                         fields: {
                             mill_id: await toUuid(db, 'mills', g('mill_id')), rice_variety_id: await toUuid(db, 'varieties', g('rice_variety_id')),
-                            collection_date: g('collection_date'), quantity: nullable(g('quantity')), quantity_unit: nullable(g('quantity')) === null ? null : g('quantity_unit'),
+                            collection_date: g('collection_date'),
                             notes: nullable(g('notes')),
                         },
                     },
@@ -82,7 +82,7 @@ async function build(db, form) {
         }
         case 'dispatch.respond': {
             const fields = f.status === 'confirmed'
-                ? { status: 'confirmed', confirmed_quantity: f.confirmed_quantity, confirmed_quantity_unit: f.confirmed_quantity_unit, rate: f.rate, rate_unit: f.rate_unit, packing_type: f.packing_type, packing_details: nullable(f.packing_details), confirmation_date: f.confirmation_date }
+                ? { status: 'confirmed', confirmed_quantity: f.confirmed_quantity, confirmed_quantity_unit: 'maund', rate: f.rate, rate_unit: 'per_maund', packing_type: f.packing_type, packing_details: nullable(f.packing_details), confirmation_date: f.confirmation_date }
                 : { status: f.status, rejection_date: f.rejection_date };
             return { op: { type, payload: { target, base_version: version, fields }, summary: `Buyer response (${f.status || 'unknown'})` }, open: `/dispatches/${target}` };
         }

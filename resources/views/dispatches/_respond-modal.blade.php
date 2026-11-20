@@ -48,11 +48,9 @@
                 <div class="mt-4 d-none" data-response-section="confirmed">
                     <div class="form-section-title"><i class="bi bi-clipboard-check"></i> Confirmed order</div>
                     <div class="row">
-                        <x-form.input class="col-7 col-md-4 mb-3" name="confirmed_quantity" type="number" label="Quantity" required step="0.01" min="0" inputmode="decimal" placeholder="e.g. 500" />
-                        <x-form.select class="col-5 col-md-2 mb-3" name="confirmed_quantity_unit" label="Unit" :options="config('rice.quantity_units')" value="maund" required />
-                        <x-form.input class="col-7 col-md-4 mb-3" name="rate" type="number" label="Agreed rate" required step="0.01" min="0" inputmode="decimal" prefix="Rs" />
-                        <x-form.select class="col-5 col-md-2 mb-3" name="rate_unit" label="Per" :options="config('rice.rate_units')" value="per_maund" required />
-                        <x-form.select class="col-md-6 mb-3" name="packing_type" label="Packing type" :options="config('rice.packing_types')" placeholder="Select packing" required />
+                        <x-form.input class="col-md-6 mb-3" name="confirmed_quantity" type="number" label="Quantity" required step="0.01" min="0" inputmode="decimal" placeholder="e.g. 500" suffix="Maund" />
+                        <x-form.input class="col-md-6 mb-3" name="rate" type="number" label="Rate per maund" required step="0.01" min="0" inputmode="decimal" prefix="Rs" suffix="/ Maund" />
+                        <x-form.select class="col-md-6 mb-3" name="packing_type" label="Packing (bag size)" :options="config('rice.packing_types')" placeholder="Select bag size" required />
                         <x-form.input class="col-md-6 mb-3" name="confirmation_date" type="date" label="Confirmation date" :value="now()->format('Y-m-d')" required max="{{ now()->format('Y-m-d') }}" />
                         <x-form.textarea class="col-12 mb-0" name="packing_details" label="Packing details / notes" rows="2" placeholder="e.g. 50 kg PP bags, buyer's printed bags, double stitching" />
                     </div>

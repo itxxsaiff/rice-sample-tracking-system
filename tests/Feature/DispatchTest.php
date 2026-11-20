@@ -80,12 +80,33 @@ class DispatchTest extends TestCase
         $dispatch = SampleDispatch::factory()->create();
 
         $this->actingAs($this->user)->put(route('dispatches.respond.update', $dispatch), ['status' => 'confirmed'])
-            ->assertSessionHasErrors(['confirmed_quantity', 'confirmed_quantity_unit', 'rate', 'rate_unit', 'packing_type', 'confirmation_date']);
+            ->assertSessionHasErrors(['confirmed_quantity', 'rate', 'packing_type', 'confirmation_date']);
 
         $this->assertTrue($dispatch->fresh()->isPending());
 
         $this->put(route('dispatches.respond.update', $dispatch), ['status' => 'pending'])->assertSessionHasErrors('status');
         $this->assertTrue($dispatch->fresh()->isPending());
+    }
+
+    public function test_orders_are_always_in_maunds_at_a_rate_per_maund(): void
+    {
+        $dispatch = SampleDispatch::factory()->create();
+
+        $this->actingAs($this->user)->put(route('dispatches.respond.update', $dispatch), [
+            'status' => 'confirmed', 'confirmed_quantity' => 800, 'rate' => 9600, 'packing_type' => '40 kg', 'confirmation_date' => now()->toDateString(),
+        ])->assertSessionHasNoErrors();
+
+        $dispatch->refresh();
+        $this->assertSame('maund', $dispatch->confirmed_quantity_unit);
+        $this->assertSame('per_maund', $dispatch->rate_unit);
+        $this->assertSame('40 kg', $dispatch->packing_type);
+        $this->assertSame('Rs 9,600 / Maund', $dispatch->rateLabel());
+
+        // Only the bag sizes are accepted as packing.
+        $other = SampleDispatch::factory()->create();
+        $this->put(route('dispatches.respond.update', $other), [
+            'status' => 'confirmed', 'confirmed_quantity' => 800, 'rate' => 9600, 'packing_type' => 'PP bag', 'confirmation_date' => now()->toDateString(),
+        ])->assertSessionHasErrors('packing_type');
     }
 
     public function test_rejection_needs_no_reason_and_defaults_to_today(): void
@@ -119,7 +140,7 @@ class DispatchTest extends TestCase
         // Invalid input comes back with the popup reopened for the same dispatch.
         $this->from(route('dispatches.index'))->put(route('dispatches.respond.update', $pending), ['status' => 'confirmed', 'respond_dispatch_id' => $pending->id])
             ->assertRedirect(route('dispatches.index'));
-        $this->get(route('dispatches.index'))->assertSee('data-reopen=', false)->assertSee('The confirmed quantity field is required.');
+        $this->get(route('dispatches.index'))->assertSee('data-reopen=', false)->assertSee('The quantity (maund) field is required.');
     }
 
     public function test_response_date_cannot_precede_dispatch_date(): void
@@ -259,7 +280,7 @@ class DispatchTest extends TestCase
     {
         return array_merge([
             'status' => 'confirmed', 'confirmed_quantity' => 500, 'confirmed_quantity_unit' => 'maund',
-            'rate' => 9500, 'rate_unit' => 'per_maund', 'packing_type' => 'PP bag',
+            'rate' => 9500, 'rate_unit' => 'per_maund', 'packing_type' => '50 kg',
             'packing_details' => '50 kg bags', 'confirmation_date' => now()->toDateString(),
         ], $overrides);
     }

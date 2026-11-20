@@ -8,8 +8,8 @@ import { Modal } from 'bootstrap';
  * The form posts normally, so the offline safety net (data-offline-op) and
  * server validation work exactly like any other form.
  */
-const FIELDS = ['confirmed_quantity', 'confirmed_quantity_unit', 'rate', 'rate_unit', 'packing_type', 'packing_details', 'confirmation_date'];
-const DEFAULTS = { confirmed_quantity_unit: 'maund', rate_unit: 'per_maund' };
+// Quantity is always in maunds and the rate per maund (set by the server).
+const FIELDS = ['confirmed_quantity', 'rate', 'packing_type', 'packing_details', 'confirmation_date'];
 
 function today() {
     const d = new Date();
@@ -59,7 +59,9 @@ export function initResponseForm() {
             form.querySelectorAll('input[name="status"]').forEach((r) => { r.checked = r.value === d.status; });
             FIELDS.forEach((name) => {
                 const input = q(`[name="${name}"]`);
-                input.value = d.values?.[name] ?? DEFAULTS[name] ?? (name === 'confirmation_date' ? today() : '');
+                const value = d.values?.[name] ?? (name === 'confirmation_date' ? today() : '');
+                // Older orders may have a packing that is no longer in the list: ask again.
+                input.value = input.tagName === 'SELECT' && ![...input.options].some((o) => o.value === String(value)) ? '' : value;
             });
         }
         sync();
@@ -92,7 +94,7 @@ export function initResponseForm() {
         if (status === 'confirmed') {
             if (!(Number(q('[name="confirmed_quantity"]').value) > 0)) fail('confirmed_quantity', 'Enter the confirmed quantity.');
             if (!(Number(q('[name="rate"]').value) > 0)) fail('rate', 'Enter the agreed rate.');
-            if (!q('[name="packing_type"]').value) fail('packing_type', 'Choose the packing type.');
+            if (!q('[name="packing_type"]').value) fail('packing_type', 'Choose the bag size.');
             if (!q('[name="confirmation_date"]').value) fail('confirmation_date', 'Enter the confirmation date.');
         }
         if (first) {

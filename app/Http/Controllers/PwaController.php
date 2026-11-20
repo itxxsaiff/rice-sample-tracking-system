@@ -42,6 +42,7 @@ class PwaController extends Controller
         // Business vocabulary only (config/rice.php) — no user data.
         $config = [
             'sample_units' => config('rice.sample_units'),
+            'sample_default' => config('rice.sample_default'),
             'quantity_units' => config('rice.quantity_units'),
             'rate_units' => config('rice.rate_units'),
             'packing_types' => config('rice.packing_types'),

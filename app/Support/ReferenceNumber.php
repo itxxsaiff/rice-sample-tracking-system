@@ -21,7 +21,7 @@ class ReferenceNumber
 
         return DB::transaction(function () use ($type, $prefix, $model, $column) {
             DB::table('reference_sequences')->insertOrIgnore(['key' => $type, 'value' => 0]);
-            $value = (int) DB::table('reference_sequences')->where('key', $type)->lockForUpdate()->value('value');
+            $value = self::floor($type, (int) DB::table('reference_sequences')->where('key', $type)->lockForUpdate()->value('value'));
 
             do {
                 $value++;
@@ -37,8 +37,14 @@ class ReferenceNumber
     /** A preview of the next number for form placeholders (not reserved). */
     public static function peek(string $type): string
     {
-        $value = (int) DB::table('reference_sequences')->where('key', $type)->value('value');
+        $value = self::floor($type, (int) DB::table('reference_sequences')->where('key', $type)->value('value'));
 
         return sprintf('%s-%04d', config("rice.prefixes.{$type}"), $value + 1);
+    }
+
+    /** Series with a configured start (e.g. samples from 255) never go below it. */
+    private static function floor(string $type, int $value): int
+    {
+        return max($value, (int) config("rice.number_start.{$type}", 1) - 1);
     }
 }

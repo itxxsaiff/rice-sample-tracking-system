@@ -244,11 +244,9 @@ export function openRespondDialog(ctx, d) {
             <div class="row g-2">${option('confirmed', 'check-circle-fill', 'green', 'Confirmed', 'Buyer wants to purchase')}${option('rejected', 'x-circle-fill', 'red', 'Rejected', 'Buyer declined the sample')}</div>
             <div class="invalid-feedback d-block" data-error-for="status"></div>
             <div class="mt-4 d-none" data-section="confirmed"><div class="form-section-title"><i class="bi bi-clipboard-check"></i> Confirmed order</div><div class="row">
-                ${input('confirmed_quantity', 'Quantity', { type: 'number', required: true, cls: 'col-7 col-md-4 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', placeholder: 'e.g. 500' })}
-                ${select('confirmed_quantity_unit', 'Unit', cfg().quantity_units || {}, { value: 'maund', required: true, cls: 'col-5 col-md-2 mb-3' })}
-                ${input('rate', 'Agreed rate', { type: 'number', required: true, cls: 'col-7 col-md-4 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', prefix: 'Rs' })}
-                ${select('rate_unit', 'Per', cfg().rate_units || {}, { value: 'per_maund', required: true, cls: 'col-5 col-md-2 mb-3' })}
-                ${select('packing_type', 'Packing type', cfg().packing_types || {}, { placeholder: 'Select packing', required: true, cls: 'col-md-6 mb-3' })}
+                ${input('confirmed_quantity', 'Quantity (maund)', { type: 'number', required: true, cls: 'col-md-6 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', placeholder: 'e.g. 500' })}
+                ${input('rate', 'Rate per maund', { type: 'number', required: true, cls: 'col-md-6 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', prefix: 'Rs' })}
+                ${select('packing_type', 'Packing (bag size)', cfg().packing_types || {}, { placeholder: 'Select bag size', required: true, cls: 'col-md-6 mb-3' })}
                 ${input('confirmation_date', 'Confirmation date', { type: 'date', value: today(), required: true, cls: 'col-md-6 mb-3', attrs: `max="${today()}" min="${h(d.dispatch_date)}"` })}
                 ${textarea('packing_details', 'Packing details / notes', { cls: 'col-12 mb-0', placeholder: 'e.g. 50 kg PP bags, buyer\'s printed bags' })}
             </div></div>
@@ -279,11 +277,11 @@ export function openRespondDialog(ctx, d) {
         if (v.status === 'confirmed') {
             if (!(Number(v.confirmed_quantity) > 0)) errors.confirmed_quantity = 'Enter the confirmed quantity.';
             if (!(Number(v.rate) > 0)) errors.rate = 'Enter the agreed rate.';
-            if (!v.packing_type) errors.packing_type = 'Choose the packing type.';
+            if (!v.packing_type) errors.packing_type = 'Choose the bag size.';
             if (!v.confirmation_date) errors.confirmation_date = 'The confirmation date is required.';
             else if (v.confirmation_date > today()) errors.confirmation_date = 'The confirmation date cannot be in the future.';
             else if (v.confirmation_date < d.dispatch_date) errors.confirmation_date = 'The confirmation date cannot be before the dispatch date.';
-            fields = { status: 'confirmed', confirmed_quantity: Number(v.confirmed_quantity), confirmed_quantity_unit: v.confirmed_quantity_unit, rate: Number(v.rate), rate_unit: v.rate_unit, packing_type: v.packing_type, packing_details: v.packing_details || null, confirmation_date: v.confirmation_date };
+            fields = { status: 'confirmed', confirmed_quantity: Number(v.confirmed_quantity), confirmed_quantity_unit: 'maund', rate: Number(v.rate), rate_unit: 'per_maund', packing_type: v.packing_type, packing_details: v.packing_details || null, confirmation_date: v.confirmation_date };
         } else if (v.status === 'rejected') {
             fields = { status: 'rejected', rejection_date: today() < d.dispatch_date ? d.dispatch_date : today() };
         } else {

@@ -107,9 +107,8 @@ function sampleRow(ctx, key, row = {}) {
             <div class="col-md-6 mb-3 quick-scope"><div class="d-flex justify-content-between align-items-end gap-2"><label class="form-label required" for="o_${n('rice_variety_id').replace(/[^a-z0-9]+/gi, '_')}">Rice variety</label>
                 <button type="button" class="btn btn-link btn-sm p-0 mb-1 text-decoration-none" data-local-quick-add="variety"><i class="bi bi-plus-circle"></i> New variety</button></div>
                 ${select(n('rice_variety_id'), '', ctx.varietyOptions(), { value: row.rice_variety_id || '', placeholder: 'Select variety', required: true, cls: '', attrs: 'data-variety-select' })}</div>
-            ${input(n('collection_date'), 'Collection date', { type: 'date', value: row.collection_date || today(), required: true, cls: 'col-12 col-md-4 mb-3', attrs: `max="${today()}" data-row-date` })}
-            ${input(n('quantity'), 'Sample quantity', { type: 'number', cls: 'col-6 col-md-4 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', placeholder: 'e.g. 5' })}
-            ${select(n('quantity_unit'), 'Unit', cfg().sample_units || {}, { value: row.quantity_unit || 'kg', cls: 'col-6 col-md-4 mb-3', attrs: 'data-unit-select' })}
+            ${input(n('collection_date'), 'Collection date', { type: 'date', value: row.collection_date || today(), required: true, cls: 'col-md-6 mb-3', attrs: `max="${today()}" data-row-date` })}
+            <div class="col-md-6 mb-3"><span class="form-label d-block">Sample</span><div class="form-control-plaintext fw-semibold py-2">${h(qty(cfg().sample_default?.quantity ?? 2, cfg().sample_default?.unit ?? 'kg'))} <span class="text-muted fw-normal small">· number assigned automatically</span></div></div>
             ${textarea(n('notes'), 'Notes', { rows: 1, cls: 'col-12 mb-0', placeholder: 'Moisture, broken %, colour, price indication…' })}
         </div></div>`;
 }
@@ -121,7 +120,6 @@ function validateSample(ctx, row, prefix, errors) {
     if (!row.rice_variety_id) errors[n('rice_variety_id')] = 'Choose the rice variety.';
     if (!row.collection_date) errors[n('collection_date')] = 'The collection date is required.';
     else if (row.collection_date > today()) errors[n('collection_date')] = 'The collection date cannot be in the future.';
-    if (row.quantity !== '' && row.quantity != null && (Number.isNaN(Number(row.quantity)) || Number(row.quantity) < 0)) errors[n('quantity')] = 'Enter a valid quantity.';
 }
 
 function wireQuickAdds(ctx, root) {
@@ -181,9 +179,9 @@ export function sampleNew(ctx, params, query) {
             };
             form.addEventListener('click', (e) => {
                 if (e.target.closest('[data-add-row]')) {
-                    // Same day and unit as the row above; mill and variety are chosen per sample.
+                    // Same day as the row above; mill and variety are chosen per sample.
                     const prev = rows.querySelector('.sample-row:last-child');
-                    const row = addRow(prev ? { collection_date: prev.querySelector('[data-row-date]').value, quantity_unit: prev.querySelector('[data-unit-select]').value } : {});
+                    const row = addRow(prev ? { collection_date: prev.querySelector('[data-row-date]').value } : {});
                     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 const rm = e.target.closest('[data-remove-row]');
@@ -198,7 +196,7 @@ export function sampleNew(ctx, params, query) {
                 const errors = {};
                 const entries = [...rows.querySelectorAll('.sample-row')].map((el) => {
                     const prefix = `samples[${el.dataset.key}]`;
-                    const row = Object.fromEntries(['mill_id', 'rice_variety_id', 'collection_date', 'quantity', 'quantity_unit', 'notes'].map((f) => [f, data[`${prefix}[${f}]`] ?? '']));
+                    const row = Object.fromEntries(['mill_id', 'rice_variety_id', 'collection_date', 'notes'].map((f) => [f, data[`${prefix}[${f}]`] ?? '']));
                     validateSample(ctx, row, prefix, errors);
                     return row;
                 });
@@ -207,12 +205,10 @@ export function sampleNew(ctx, params, query) {
                 const ids = [];
                 for (const row of entries) {
                     const id = uuid();
-                    const hasQty = row.quantity !== '';
                     await enqueue(ctx.db, {
                         type: 'sample.create',
                         payload: { uuid: id, fields: {
-                            mill_id: row.mill_id, rice_variety_id: row.rice_variety_id, collection_date: row.collection_date,
-                            quantity: hasQty ? Number(row.quantity) : null, quantity_unit: hasQty ? row.quantity_unit : null, notes: row.notes || null,
+                            mill_id: row.mill_id, rice_variety_id: row.rice_variety_id, collection_date: row.collection_date, notes: row.notes || null,
                         } },
                         summary: `New sample from ${ctx.mill(row.mill_id).name}`,
                     });
