@@ -253,6 +253,7 @@ export async function pull(db, { force = false } = {}) {
         await db.meta.bulkPut([
             { key: 'lastSnapshotServerTime', value: data.server_time },
             { key: 'lastSync', value: Date.now() },
+            { key: 'historyDays', value: data.history_days },
             ...(needsFull ? [{ key: 'lastFullSnapshot', value: Date.now() }, { key: 'needsFullSnapshot', value: false }] : []),
         ]);
     });

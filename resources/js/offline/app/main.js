@@ -7,6 +7,7 @@ import { toast } from '../../modules/ui';
 import { h } from './util';
 import { directoryForm, directoryList, directoryShow } from './views/directory';
 import { home } from './views/home';
+import { onlineOnly, recordsList, varietiesList } from './views/more';
 import { dispatchList, dispatchNew, dispatchShow, initRespondButtons, loadingIndex, loadingNew, loadingShow, respondRoute } from './views/orders';
 import { sampleNew, sampleShow, samplesList } from './views/samples';
 
@@ -23,13 +24,18 @@ const ROUTES = [
     ['/buyers', directoryList('buyer')], ['/buyers/new', directoryForm('buyer')], ['/buyers/:id/edit', directoryForm('buyer')], ['/buyers/:id', directoryShow('buyer')],
     ['/dispatches', dispatchList], ['/dispatches/new', dispatchNew], ['/dispatches/:id/respond', respondRoute], ['/dispatches/:id/load', loadingNew], ['/dispatches/:id', dispatchShow],
     ['/loading', loadingIndex], ['/loadings/:id', loadingShow],
+    ['/records', recordsList], ['/varieties', varietiesList],
+    ['/settings/users', onlineOnly('Manage Users', 'person-gear', 'Adding users, changing roles and resetting passwords needs an internet connection.')],
+    ['/account', onlineOnly('My Account', 'person-circle', 'Changing your name, email or password needs an internet connection.')],
 ];
 
+// Same menu as the online app (partials/nav-links.blade.php).
 const NAV = [
     ['', [['/', 'Dashboard', 'grid-1x2']]],
     ['Samples', [['/samples', 'Samples', 'basket']]],
-    ['Orders', [['/dispatches', 'Dispatches', 'send'], ['/loading', 'Loading', 'truck']]],
-    ['Directory', [['/mills', 'Rice Mills', 'buildings'], ['/buyers', 'Buyers', 'people']]],
+    ['Orders', [['/dispatches', 'Dispatches', 'send'], ['/loading', 'Loading', 'truck'], ['/records', 'Records', 'journal-text']]],
+    ['Directory', [['/mills', 'Rice Mills', 'buildings'], ['/buyers', 'Buyers', 'people'], ['/varieties', 'Rice Varieties', 'tags']]],
+    ['Settings', [['/settings/users', 'Manage Users', 'person-gear', 'admin'], ['/account', 'My Account', 'person-circle']]],
 ];
 
 function match(path) {
@@ -45,7 +51,7 @@ function match(path) {
 /** Map the real URL the user opened (e.g. /samples/create, /mills/12) to an offline route. */
 async function initialRoute(user) {
     const path = location.pathname.replace(/\/+$/, '') || '/';
-    const simple = { '/samples/create': '/samples/new', '/bundles/create': '/samples/new', '/bundles': '/samples', '/dispatches/create': '/dispatches/new', '/mills/create': '/mills/new', '/buyers/create': '/buyers/new', '/records': '/dispatches', '/varieties': '/', '/search': '/' };
+    const simple = { '/samples/create': '/samples/new', '/bundles/create': '/samples/new', '/bundles': '/samples', '/dispatches/create': '/dispatches/new', '/mills/create': '/mills/new', '/buyers/create': '/buyers/new', '/search': '/' };
     if (simple[path]) return simple[path];
 
     const m = path.match(/^\/(samples|mills|buyers|dispatches|loadings)\/(\d+)(\/edit|\/respond|\/loadings\/create)?$/);
@@ -64,12 +70,15 @@ async function initialRoute(user) {
 }
 
 function buildNav(active) {
-    const html = NAV.map(([heading, links]) => `${heading ? `<div class="sidebar-heading">${heading}</div>` : ''}${links.map(([href, label, icon]) => {
-        const on = href === '/' ? active === '/' : active.startsWith(href);
-        return `<a href="#${href}" class="sidebar-link ${on ? 'active' : ''}"><i class="bi bi-${icon}"></i><span>${label}</span></a>`;
-    }).join('')}`).join('');
-    document.querySelector('[data-offline-nav]').innerHTML = `${html}<div class="sidebar-heading">Online only</div>
-        <div class="sidebar-link" style="opacity:.55"><i class="bi bi-journal-text"></i><span>Records &amp; user management</span></div>`;
+    const admin = readActiveUser()?.role === 'admin';
+    const html = NAV.map(([heading, links]) => {
+        const visible = links.filter(([, , , only]) => only !== 'admin' || admin);
+        return `${heading && visible.length ? `<div class="sidebar-heading">${heading}</div>` : ''}${visible.map(([href, label, icon]) => {
+            const on = href === '/' ? active === '/' : active.startsWith(href);
+            return `<a href="#${href}" class="sidebar-link ${on ? 'active' : ''}"><i class="bi bi-${icon}"></i><span>${label}</span></a>`;
+        }).join('')}`;
+    }).join('');
+    document.querySelector('[data-offline-nav]').innerHTML = html;
     document.querySelectorAll('.bottom-nav a').forEach((a) => {
         const href = a.getAttribute('href').replace(/^#/, '');
         a.classList.toggle('active', href === '/' ? active === '/' : active.startsWith(href));

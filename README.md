@@ -14,13 +14,12 @@ It is **not** an ERP or accounting system. There are no payments, ledgers or inv
 | **Rice mills** | Permanent profiles (unique per name + city) with the complete sample history of each mill |
 | **Buyers** | Permanent profiles with every dispatch, response, agreed quantity/rate, packing and loading |
 | **Rice varieties** | Editable list (1121, 1509, Super Basmati, … any variety); deactivate instead of delete |
-| **Samples** | Auto-numbered (`SMP-0001`), linked to a mill and variety, optional photo from the camera |
-| **Bundles** | Several samples received together (`BND-0001`); each sample keeps its own mill |
+| **Samples** | Auto-numbered (`SMP-0001`), linked to a mill and variety; **Add another sample** saves several independent samples from one form (default unit kg) |
 | **Dispatches** | Send any samples to any buyers in one step: one independent record (`DSP-0001`) per sample–buyer pair |
-| **Buyer response** | Confirm (quantity, unit, rate, packing, date) or reject (reason, date); validated transitions |
+| **Buyer response** | Recorded in a popup from the dispatch list, dashboard or dispatch page: confirm (quantity, unit, rate, packing, date) or reject (one tap, no reason); validated transitions |
 | **Loading** | Confirmed orders only; multiple trucks per order (`LD-0001`) with quantities, bags, driver, responsible person and multiple photos; complete the order when done |
 | **Records** | Filterable history of dispatches, confirmations, rejections, truck loadings and completed orders |
-| **Search** | One search box across samples, dispatches, mills, buyers, bundles and trucks |
+| **Search** | One search box across samples, dispatches, mills, buyers and trucks |
 | **Users** | Admin creates employee logins, resets passwords, deactivates accounts |
 | **Offline mode** | Installable app that keeps working without internet and syncs automatically when the connection returns (see below) |
 
@@ -44,7 +43,7 @@ Sample ──dispatch──▶ Dispatch (one per buyer)
 
 | | Admin | Employee |
 | --- | :-: | :-: |
-| Samples, bundles, mills, buyers, varieties, dispatches, responses, loading | ✅ | ✅ |
+| Samples, mills, buyers, varieties, dispatches, responses, loading | ✅ | ✅ |
 | Manage users (Settings → Manage Users) | ✅ | ❌ (403) |
 | Delete records that have no history (e.g. an unused mill or a pending dispatch) | ✅ | ❌ |
 | Edit loaded trucks / reopen completed orders | ✅ | ❌ |
@@ -61,14 +60,16 @@ The app is an installable Progressive Web App. Online it behaves exactly as befo
 
 | Area | Offline |
 | --- | --- |
-| Rice mills, buyers | View, search, profile with history, add, edit |
-| Samples | View, add (with camera photo), add a bundle with samples from different mills, new variety |
+| Dashboard | Same sections as online, counted from the data on the device |
+| Rice mills, buyers, varieties | View, search, profile with history, add, edit (mills/buyers), add variety |
+| Samples | View, add one or several samples from one form |
 | Dispatches | Send samples to one or more buyers (one record per buyer) |
-| Buyer responses | Confirm (quantity, rate, packing) or reject (reason) a pending dispatch |
+| Buyer responses | Confirm or reject a pending dispatch in the response popup |
 | Loading | Record trucks with photos, mark trucks loaded, complete the order |
-| Online only | Records page, global search, user management, deleting, editing an existing response, editing loaded trucks |
+| Records | Same tabs as online, for the data on the device |
+| Online only | Global search, Manage Users, My Account, deleting, editing an existing response, editing loaded trucks (their menu items stay visible and explain this) |
 
-Records not yet on the server carry a **Not synced** badge. Saving always says *"Saved on this device…"*; a separate *"N changes synced with the server"* message appears only when the server has accepted them. The device keeps the last `OFFLINE_HISTORY_DAYS` (default 365) of history plus all open work.
+Records not yet on the server carry a **Not synced** badge. Saving always says *"Saved on this device…"*; a separate *"N changes synced with the server"* message appears only when the server has accepted them. The device keeps the last `OFFLINE_HISTORY_DAYS` days (default **10**, counted back from today) of samples and dispatches, plus all open work (responses still awaited, orders still being loaded) whatever its age. Mills, buyers and varieties are always kept in full.
 
 If the connection drops while a form is open on a normal online page, **Save** offers to keep the entry on the device instead of losing it.
 
@@ -113,7 +114,7 @@ php artisan test                      # includes sync API tests (tests/Feature/S
 BASE_URL=http://127.0.0.1:8000 ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run test:browser
 ```
 
-The browser tests (local database only, never production) cut the network in Chrome and run: offline sample/bundle/dispatch/response/loading with photos, offline reload, automatic sync, interrupted sync, conflicting edits, account switching and session expiry. Real-device checks still needed on an iPhone: camera capture, Add to Home Screen, and reopening the installed app in airplane mode.
+The browser tests (local database only, never production) cut the network in Chrome and run: offline samples (several from one form)/dispatch/response popup/loading with photos, offline reload, automatic sync, interrupted sync, conflicting edits, account switching and session expiry. Real-device checks still needed on an iPhone: camera capture, Add to Home Screen, and reopening the installed app in airplane mode.
 
 ---
 
@@ -165,7 +166,7 @@ The admin then creates employee accounts in **Settings → Manage Users**. Every
 php artisan test
 ```
 
-Tests use an in-memory SQLite database and fake file storage, so they never touch your MySQL data. They cover authentication, role restrictions, user management, mill/sample/bundle linkage, multi-buyer dispatch, independent responses, the loading workflow, photo uploads, history pages, security headers and N+1 query limits.
+Tests use an in-memory SQLite database and fake file storage, so they never touch your MySQL data. They cover authentication, role restrictions, user management, mill/sample linkage, multi-sample form, multi-buyer dispatch, independent responses, the loading workflow, photo uploads, history pages, security headers and N+1 query limits.
 
 ---
 
@@ -233,8 +234,8 @@ Back up both:
 1. Open the site in **Safari** and sign in (tick *Keep me signed in*).
 2. Tap **Share → Add to Home Screen**. The app opens full-screen like a native app.
 3. The bottom bar gives one-tap access to Home, Samples, Dispatch and Loading. The **+** button opens quick actions.
-4. **Take photo** opens the camera directly. **Choose photos** picks several images from the library.
-5. At a mill, use **Save & add another** to record several samples quickly, or **New bundle** to enter a whole bundle on one screen.
+4. When recording a truck, **Take photo** opens the camera directly. **Choose photos** picks several images from the library.
+5. At a mill, tap **Add another sample** to record several samples on one screen; each is saved as its own sample.
 
 ---
 
@@ -257,8 +258,8 @@ Stored values are plain strings, so old records stay readable if an option is la
 | `users` | Accounts with `role` (admin/employee) and `is_active` |
 | `mills`, `buyers` | Permanent profiles |
 | `rice_varieties` | Variety list (active/inactive) |
-| `sample_bundles` | Groups of samples received together |
-| `samples` | Each sample → one mill, one variety, optional bundle |
+| `sample_bundles` | No longer used (bundles were removed); kept so no existing data is deleted |
+| `samples` | Each sample → one mill, one variety (`sample_bundle_id` no longer used) |
 | `sample_dispatches` | Each sample → buyer dispatch with response and loading status |
 | `loadings` | Trucks loaded against a confirmed dispatch |
 | `loading_photos` | Photos per truck |
@@ -266,7 +267,7 @@ Stored values are plain strings, so old records stay readable if an option is la
 | `reference_sequences` | Counters for reference numbers |
 | `sync_operations` | Offline changes already applied (exactly-once sync) |
 
-Foreign keys use `RESTRICT` on delete so historical records can never be orphaned. Multi-record operations (bundles, multi-buyer dispatches, loadings with photos) run inside database transactions.
+Foreign keys use `RESTRICT` on delete so historical records can never be orphaned. Multi-record operations (several samples from one form, multi-buyer dispatches, loadings with photos) run inside database transactions.
 
 ## Project structure
 
@@ -282,7 +283,7 @@ app/
 resources/
   views/              Blade views, components (form fields, picker, photo input, badges)
   css/app.css         Design system on top of Bootstrap 5
-  js/modules/         Picker, bundle builder, photo compression, quick-add dialogs, UI helpers
+  js/modules/         Picker, sample rows, response popup, photo compression, quick-add dialogs, UI helpers
   js/offline/         IndexedDB, outbox, sync engine, status panel, form capture
   js/offline/app/     Offline app screens (served by the service worker)
   pwa/sw.js           Service worker template (served at /sw.js)

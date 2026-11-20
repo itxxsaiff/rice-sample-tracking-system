@@ -2,11 +2,12 @@
 
 return [
     /*
-    | How much history is copied to each device for offline use. Open work
-    | (pending responses, orders still being loaded) is always included,
-    | regardless of age.
+    | How many days of samples and dispatches are copied to each device for
+    | offline use (counted back from today). Open work (responses still
+    | awaited, orders still being loaded) is always included, whatever its
+    | age. Mills, buyers and varieties are always copied in full.
     */
-    'history_days' => (int) env('OFFLINE_HISTORY_DAYS', 365),
+    'history_days' => (int) env('OFFLINE_HISTORY_DAYS', 10),
 
     /*
     | A device that has not reached the server with a valid session for this

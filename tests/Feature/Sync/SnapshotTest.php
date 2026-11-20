@@ -85,6 +85,21 @@ class SnapshotTest extends TestCase
         $this->assertNotContains($oldClosed->uuid, $dispatchUuids);
     }
 
+    public function test_by_default_devices_get_the_last_ten_days(): void
+    {
+        $recent = Sample::factory()->create(['collection_date' => now()->subDays(10)]);
+        $older = Sample::factory()->create(['collection_date' => now()->subDays(11)]);
+        $recentDispatch = SampleDispatch::factory()->rejected()->for($recent)->create(['dispatch_date' => now()->subDays(9)]);
+        $olderDispatch = SampleDispatch::factory()->rejected()->for($older)->create(['dispatch_date' => now()->subDays(11)]);
+
+        $data = $this->actingAs(User::factory()->create())->getJson(route('sync.snapshot'))->json();
+
+        $this->assertSame(10, $data['history_days']);
+        $this->assertSame([$recent->uuid], collect($data['samples'])->pluck('uuid')->all());
+        $this->assertSame([$recentDispatch->uuid], collect($data['dispatches'])->pluck('uuid')->all());
+        $this->assertNotContains($olderDispatch->uuid, $data['keep']['dispatches']); // dropped from the device
+    }
+
     public function test_deleted_records_drop_out_of_the_keep_list(): void
     {
         $sample = Sample::factory()->create();

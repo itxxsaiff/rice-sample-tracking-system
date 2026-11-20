@@ -80,14 +80,17 @@ step(box.count === 0 && captured === '1', `B captured buyer synced once (count i
 await page.goto(base + '/', { waitUntil: 'networkidle0' }); await sleep(1500);
 await page.setOfflineMode(true);
 await page.goto(base + '/samples/create', { waitUntil: 'domcontentloaded' }); await sleep(1200);
+// Four rows in one "Add Sample" form → four independent sample operations.
 for (let i = 1; i <= 4; i++) {
-    await page.evaluate(() => { const i = document.querySelector('[data-local-picker] [data-picker-input]'); i.focus(); i.value = 'Madina'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+    if (i > 1) { await page.click('[data-add-row]'); await sleep(300); }
+    const row = `.sample-row:nth-child(${i})`;
+    await page.evaluate((r) => { const el = document.querySelector(`${r} [data-local-picker] [data-picker-input]`); el.focus(); el.value = 'Madina'; el.dispatchEvent(new Event('input', { bubbles: true })); }, row);
     await sleep(200);
-    await page.evaluate(() => document.querySelector('.picker-option').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })));
-    await page.select('select[name=rice_variety_id]', await page.$eval('select[name=rice_variety_id] option:nth-child(2)', (o) => o.value));
-    await page.type('textarea[name=notes]', `interrupt-${stamp}-${i}`);
-    await page.click('button[value=another]'); await sleep(900);
+    await page.evaluate((r) => document.querySelector(`${r} .picker-option`).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })), row);
+    await page.select(`${row} select[data-variety-select]`, await page.$eval(`${row} select[data-variety-select] option:nth-child(2)`, (o) => o.value));
+    await page.type(`${row} textarea[name$="[notes]"]`, `interrupt-${stamp}-${i}`);
 }
+await page.click('.action-bar button.btn-primary'); await sleep(900);
 console.log('     queued:', (await outbox()).count);
 const client = await page.createCDPSession();
 await client.send('Network.emulateNetworkConditions', { offline: false, latency: 1200, downloadThroughput: 200000, uploadThroughput: 200000 });

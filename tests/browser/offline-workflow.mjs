@@ -70,32 +70,35 @@ await page.goto(base + '/samples/create', { waitUntil: 'domcontentloaded' });
 await sleep(1200);
 console.log('   offline route:', await page.evaluate(() => location.hash), '| title:', await page.$eval('[data-page-title]', (e) => e.textContent));
 
-// Scenario 1: new mill (quick add) + sample with photo
+// Scenarios 1 + 2: new mill (quick add) + several independent samples in one form (two mills)
 await page.click('[data-local-quick-add="mill"]');
 await fillModal({ name: `Offline Mill ${stamp}`, city: 'Narowal' });
-await page.select('select[name=rice_variety_id]', await page.$eval('select[name=rice_variety_id] option:nth-child(2)', (o) => o.value));
-await page.type('input[name=quantity]', '500');
-await (await page.$('input[name=photo][data-image-target]')).uploadFile(SP + 'truck.jpg');
-await sleep(1200);
-await page.click('button[value=view]');
-await sleep(900);
-console.log('   toast:', await page.$eval('.toast-stack', (e) => e.innerText.trim()).catch(() => ''));
-const sampleHash = await page.evaluate(() => location.hash);
-if (!/#\/samples\/[0-9a-f-]{36}$/.test(sampleHash)) { console.log('SAMPLE NOT SAVED. errors:', errors, await page.$$eval('.invalid-feedback', (e) => e.map((x) => x.textContent).filter(Boolean))); await browser.close(); process.exit(1); }
-step(`offline sample saved → ${sampleHash}`);
-await shot('1-sample');
-
-// Scenario 2: bundle with samples from two different mills (existing + offline one)
-await hashGo('#/bundles/new');
-await pickFirst('.bundle-row [data-local-picker]', `Offline Mill ${stamp}`);
-await page.select('.bundle-row select[data-variety-select]', await page.$eval('.bundle-row select[data-variety-select] option:nth-child(2)', (o) => o.value));
+const firstVariety = await page.$eval('.sample-row select[data-variety-select] option:nth-child(2)', (o) => o.value);
+await page.select('.sample-row select[data-variety-select]', firstVariety);
+await page.type('.sample-row input[name$="[quantity]"]', '5');
+const noPhotoOrNumber = await page.evaluate(() => !document.querySelector('[name*=photo], [name*=sample_number]'));
+console.log('   unit default:', await page.$eval('.sample-row [data-unit-select]', (e) => e.value), '| no photo / sample no. fields:', noPhotoOrNumber);
 await page.click('[data-add-row]'); await sleep(300);
-await pickFirst('.bundle-row:nth-child(2) [data-local-picker]', 'Madina');
+await pickFirst('.sample-row:nth-child(2) [data-local-picker]', 'Madina');
+await page.select('.sample-row:nth-child(2) select[data-variety-select]', firstVariety);
 await page.click('.action-bar button.btn-primary'); await sleep(900);
-step(`offline bundle saved → ${await page.evaluate(() => location.hash)}`);
+console.log('   toast:', await page.$eval('.toast-stack', (e) => e.innerText.trim()).catch(() => ''));
+if ((await page.evaluate(() => location.hash)) !== '#/samples') { console.log('SAMPLES NOT SAVED. errors:', errors, await page.$$eval('.invalid-feedback', (e) => e.map((x) => x.textContent).filter(Boolean))); await browser.close(); process.exit(1); }
+const sampleUuid = await page.evaluate(async (name) => {
+    const u = JSON.parse(localStorage.getItem('rst.activeUser'));
+    const req = indexedDB.open(`rst-user-${u.id}`);
+    const db = await new Promise((res) => { req.onsuccess = () => res(req.result); });
+    const all = (st) => new Promise((res) => { const r = db.transaction(st).objectStore(st).getAll(); r.onsuccess = () => res(r.result); });
+    const mill = (await all('mills')).find((m) => m.name === name);
+    const sample = (await all('samples')).find((x) => x.mill_uuid === mill.uuid);
+    db.close();
+    return sample.uuid;
+}, `Offline Mill ${stamp}`);
+step('two offline samples saved from one form');
+await shot('1-samples');
 
 // Scenario 3: dispatch the offline sample to two buyers (one created offline)
-await hashGo(`#/dispatches/new?sample=${sampleHash.split('/').pop()}`);
+await hashGo(`#/dispatches/new?sample=${sampleUuid}`);
 await page.click('[data-new-buyer]');
 await fillModal({ name: `Offline Buyer ${stamp}`, city: 'Karachi' });
 const boxes = await page.$$('#buyerList input[type=checkbox]');
@@ -105,19 +108,28 @@ console.log('   buyers ticked:', checked + 1, '| summary:', await page.$eval('[d
 await page.click('.action-bar button.btn-primary'); await sleep(900);
 step(`offline dispatches saved → ${await page.evaluate(() => location.hash)}`);
 
-// Scenario 4: confirm one buyer, reject the other
-const pendingLinks = await page.$$eval('a[href$="/respond"]', (as) => as.map((a) => a.getAttribute('href')));
-await hashGo(pendingLinks[0]);
-await page.evaluate(() => document.querySelector('input[value=confirmed]').closest('label').click()); await sleep(150);
-await page.type('input[name=confirmed_quantity]', '400'); await page.type('input[name=rate]', '9300');
-await page.select('select[name=packing_type]', 'PP bag');
-await page.click('.action-bar button.btn-primary'); await sleep(900);
-const confirmedHash = await page.evaluate(() => location.hash);
-await hashGo(pendingLinks[1]);
-await page.evaluate(() => document.querySelector('input[value=rejected]').closest('label').click()); await sleep(150);
-await page.click('[data-reason="High moisture"]');
-await page.click('.action-bar button.btn-primary'); await sleep(900);
-step('offline confirmation + rejection saved');
+// Scenario 4: confirm one buyer, reject the other (response popup; rejection needs no reason)
+await hashGo('#/dispatches?status=pending');
+const pending = await page.evaluate(async (sampleId) => {
+    const u = JSON.parse(localStorage.getItem('rst.activeUser'));
+    const req = indexedDB.open(`rst-user-${u.id}`);
+    const db = await new Promise((res) => { req.onsuccess = () => res(req.result); });
+    const rows = await new Promise((res) => { const r = db.transaction('dispatches').objectStore('dispatches').getAll(); r.onsuccess = () => res(r.result); });
+    db.close();
+    return rows.filter((d) => d.sample_uuid === sampleId).map((d) => d.uuid);
+}, sampleUuid);
+await page.click(`[data-local-respond="${pending[0]}"]`);
+await page.waitForSelector('.modal.show form', { timeout: 5000 }); await sleep(300);
+await page.evaluate(() => document.querySelector('.modal.show input[value=confirmed]').closest('label').click()); await sleep(150);
+await page.type('.modal.show input[name=confirmed_quantity]', '400'); await page.type('.modal.show input[name=rate]', '9300');
+await page.select('.modal.show select[name=packing_type]', 'PP bag');
+await page.click('.modal.show button.btn-primary'); await sleep(1000);
+const confirmedHash = `#/dispatches/${pending[0]}`;
+await page.click(`[data-local-respond="${pending[1]}"]`);
+await page.waitForSelector('.modal.show form', { timeout: 5000 }); await sleep(300);
+await page.evaluate(() => document.querySelector('.modal.show input[value=rejected]').closest('label').click()); await sleep(150);
+await page.click('.modal.show button.btn-primary'); await sleep(1000);
+step('offline confirmation + rejection saved from the popup');
 
 // Scenario 5: loading with two photos, last truck → completes the order
 await hashGo(`${confirmedHash}/load`);

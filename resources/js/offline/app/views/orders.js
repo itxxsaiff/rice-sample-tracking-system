@@ -154,7 +154,7 @@ function sampleSummary(ctx, d) {
         <div class="small">To <a href="#/buyers/${h(d.buyer_uuid)}" class="fw-medium">${h(ctx.buyer(d.buyer_uuid)?.name || '—')}</a> · sent ${fmtDate(d.dispatch_date)}</div></div></div>`;
 }
 
-function progressBar(ctx, d) {
+export function progressBar(ctx, d) {
     const { totals, percent } = loadingProgress(ctx, d);
     const text = Object.entries(totals).map(([u, q]) => qty(q, u)).join(' + ') || 'Nothing';
     return `<div class="d-flex justify-content-between small mb-1"><span><strong>${h(text)}</strong> loaded</span><span class="text-muted">of ${h(qty(d.confirmed_quantity, d.confirmed_quantity_unit))}</span></div>

@@ -19,6 +19,7 @@ export async function loadContext() {
     ctx.ops = await db.ops.orderBy('seq').toArray();
     ctx.photos = await db.photos.toArray();
     ctx.lastSync = await getMeta(db, 'lastSync');
+    ctx.historyDays = await getMeta(db, 'historyDays');
     ctx.mills.sort(byName);
     ctx.buyers.sort(byName);
     ctx.varieties.sort(byName);
