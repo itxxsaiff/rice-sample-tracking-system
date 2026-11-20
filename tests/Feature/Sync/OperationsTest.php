@@ -175,7 +175,7 @@ class OperationsTest extends TestCase
             'rate_unit' => 'per_ton', 'packing_type' => 'Jute bag', 'confirmation_date' => now()->toDateString(),
         ]])->assertOk();
         $this->op('dispatch.respond', ['target' => $toB, 'base_version' => 1, 'fields' => [
-            'status' => 'rejected', 'rejection_reason' => 'High moisture', 'rejection_date' => now()->toDateString(),
+            'status' => 'rejected', 'rejection_date' => now()->toDateString(),
         ]])->assertOk();
 
         $this->assertSame(DispatchStatus::Confirmed, SampleDispatch::where('uuid', $toA)->first()->status);

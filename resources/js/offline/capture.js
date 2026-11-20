@@ -83,7 +83,7 @@ async function build(db, form) {
         case 'dispatch.respond': {
             const fields = f.status === 'confirmed'
                 ? { status: 'confirmed', confirmed_quantity: f.confirmed_quantity, confirmed_quantity_unit: f.confirmed_quantity_unit, rate: f.rate, rate_unit: f.rate_unit, packing_type: f.packing_type, packing_details: nullable(f.packing_details), confirmation_date: f.confirmation_date }
-                : { status: f.status, rejection_reason: f.rejection_reason, rejection_date: f.rejection_date };
+                : { status: f.status, rejection_date: f.rejection_date };
             return { op: { type, payload: { target, base_version: version, fields }, summary: `Buyer response (${f.status || 'unknown'})` }, open: `/dispatches/${target}` };
         }
         case 'loading.create': {

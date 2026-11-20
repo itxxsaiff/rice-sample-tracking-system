@@ -116,8 +116,8 @@ class DispatchService
                 $dispatch->loading_status ??= LoadingStatus::Pending;
             } else {
                 $dispatch->forceFill([
-                    'rejection_reason' => $data['rejection_reason'],
-                    'rejection_date' => $data['rejection_date'],
+                    'rejection_reason' => null,
+                    'rejection_date' => $data['rejection_date'] ?? now()->toDateString(),
                     'confirmed_quantity' => null,
                     'confirmed_quantity_unit' => null,
                     'rate' => null,
@@ -138,7 +138,7 @@ class DispatchService
             $description = match (true) {
                 $isCorrection => "Updated {$target->label()} details for {$dispatch->buyer->name}",
                 $target === DispatchStatus::Confirmed => "{$dispatch->buyer->name} confirmed {$dispatch->confirmedQuantityLabel()} at {$dispatch->rateLabel()}",
-                default => "{$dispatch->buyer->name} rejected the sample: {$dispatch->rejection_reason}",
+                default => "{$dispatch->buyer->name} rejected the sample",
             };
 
             $dispatch->recordActivity($isCorrection ? 'updated' : $target->value, $description);

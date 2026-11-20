@@ -61,6 +61,7 @@ class BuyerController extends Controller
             ->when($status && $status !== 'completed', fn ($q) => $q->where('status', $status))
             ->latest('dispatch_date')->latest('id')
             ->paginate(15)->withQueryString();
+        $dispatches->getCollection()->each->setRelation('buyer', $buyer);
 
         $counts = $buyer->dispatches()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $counts['completed'] = $buyer->dispatches()->where('loading_status', LoadingStatus::Completed)->count();

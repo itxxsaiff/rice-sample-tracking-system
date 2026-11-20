@@ -33,7 +33,7 @@ const STATUS_TEXT = {
 const FIELD_LABELS = {
     name: 'Name', city: 'City', contact_person: 'Contact', phone: 'Phone', address: 'Address', notes: 'Notes', status: 'Response',
     confirmed_quantity: 'Quantity', confirmed_quantity_unit: 'Unit', rate: 'Rate', rate_unit: 'Rate per', packing_type: 'Packing',
-    packing_details: 'Packing details', confirmation_date: 'Confirmed on', rejection_reason: 'Reason', rejection_date: 'Rejected on',
+    packing_details: 'Packing details', confirmation_date: 'Confirmed on', rejection_date: 'Rejected on',
 };
 
 let panelEl = null;

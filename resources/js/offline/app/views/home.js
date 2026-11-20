@@ -27,7 +27,7 @@ export function home(ctx) {
                     const s = ctx.sample(d.sample_uuid);
                     return `<div class="list-group-item d-flex justify-content-between align-items-center gap-2 py-3"><a href="#/dispatches/${h(d.uuid)}" class="min-w-0 text-body">
                         <span class="d-block fw-medium text-truncate">${h(ctx.buyer(d.buyer_uuid)?.name || '—')} ${pendingBadge(d)}</span><span class="small text-muted">${h(s ? sampleLabel(ctx, s).number : '—')} · sent ${fmtDate(d.dispatch_date)}</span></a>
-                        <a href="#/dispatches/${h(d.uuid)}/respond" class="btn btn-sm btn-soft text-nowrap"><i class="bi bi-reply"></i> Respond</a></div>`;
+                        <button type="button" class="btn btn-sm btn-soft text-nowrap" data-local-respond="${h(d.uuid)}"><i class="bi bi-reply"></i> Respond</button></div>`;
                 }).join('')}</div>` : '<div class="card-body small text-muted">No responses pending.</div>'}</div></div>
             <div class="col-lg-6"><div class="card"><div class="card-header"><h2><i class="bi bi-cloud-arrow-up text-primary me-2"></i>Saved on this device</h2></div>
                 ${ctx.ops.length ? `<div class="list-group list-group-flush">${ctx.ops.slice(-6).reverse().map((o) => `<div class="list-group-item py-3 d-flex justify-content-between gap-2"><span class="small">${h(o.summary)}</span>

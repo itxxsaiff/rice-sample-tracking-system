@@ -67,7 +67,7 @@ export function directoryShow(kind) {
                     return `<a href="#/dispatches/${h(d.uuid)}" class="list-group-item list-group-item-action py-3"><div class="d-flex justify-content-between gap-2">
                         <span class="min-w-0"><span class="fw-semibold mono">${h(d.dispatch_number || 'New dispatch')}</span> ${pendingBadge(d)}<span class="d-block small text-muted text-truncate">${h(l.number)} ${h(l.variety)} · ${h(l.mill)}</span></span>
                         <span>${stageBadge(d)}</span></div>
-                        <div class="small mt-1">${fmtDate(d.dispatch_date)}${d.status === 'confirmed' ? ` · <strong>${h(qty(d.confirmed_quantity, d.confirmed_quantity_unit))}</strong> · ${h(rate(d))} · ${h(d.packing_type || '')}` : ''}${d.status === 'rejected' ? ` · ${h(d.rejection_reason || '')}` : ''}</div></a>`;
+                        <div class="small mt-1">${fmtDate(d.dispatch_date)}${d.status === 'confirmed' ? ` · <strong>${h(qty(d.confirmed_quantity, d.confirmed_quantity_unit))}</strong> · ${h(rate(d))} · ${h(d.packing_type || '')}` : ''}</div></a>`;
                 }).join('')}</div>` : empty('send', 'No dispatches to this buyer on this device')}</div>`;
         }
 

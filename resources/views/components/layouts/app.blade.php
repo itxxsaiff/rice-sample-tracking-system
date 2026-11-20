@@ -139,6 +139,9 @@
     </div>
 
     @include('partials.flash')
+    @auth
+        @include('dispatches._respond-modal')
+    @endauth
     @stack('modals')
 </body>
 </html>

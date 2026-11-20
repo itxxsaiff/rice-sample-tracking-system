@@ -14,9 +14,9 @@
                         </div>
                         <div class="page-actions">
                             @if ($dispatch->isPending())
-                                <a href="{{ route('dispatches.respond', $dispatch) }}" class="btn btn-primary"><i class="bi bi-reply"></i> Record response</a>
+                                <button type="button" class="btn btn-primary" data-respond='@json($dispatch->respondData())' data-respond-auto><i class="bi bi-reply"></i> Record response</button>
                             @else
-                                <a href="{{ route('dispatches.respond', $dispatch) }}" class="btn btn-light"><i class="bi bi-pencil"></i> Edit response</a>
+                                <button type="button" class="btn btn-light" data-respond='@json($dispatch->respondData())' data-respond-auto><i class="bi bi-pencil"></i> Edit response</button>
                             @endif
                             @can('reopen', $dispatch)
                                 <form method="POST" action="{{ route('dispatches.reopen', $dispatch) }}" data-confirm="The current response will be cleared (it stays in the history log) and the dispatch will await the buyer again." data-confirm-title="Reopen response?" data-confirm-button="Reopen" data-confirm-variant="primary">
@@ -57,7 +57,6 @@
                     <div class="card-header"><h2><i class="bi bi-x-octagon text-danger me-2"></i>Rejected</h2></div>
                     <div class="card-body">
                         <dl class="detail-list">
-                            <div style="grid-column: 1 / -1"><dt>Reason</dt><dd class="fw-normal">{!! nl2br(e($dispatch->rejection_reason)) !!}</dd></div>
                             <div><dt>Rejected on</dt><dd>{{ $dispatch->rejection_date->format('d M Y') }}</dd></div>
                             <div><dt>Recorded by</dt><dd>{{ $dispatch->responder?->name ?? '—' }}</dd></div>
                         </dl>
@@ -67,7 +66,7 @@
             @else
                 <div class="card mb-4">
                     <x-empty-state icon="hourglass-split" title="Awaiting {{ $dispatch->buyer->name }}'s response" text="Once the buyer inspects the sample, record whether they confirmed or rejected it.">
-                        <a href="{{ route('dispatches.respond', $dispatch) }}" class="btn btn-primary"><i class="bi bi-reply"></i> Record response</a>
+                        <button type="button" class="btn btn-primary" data-respond='@json($dispatch->respondData())'><i class="bi bi-reply"></i> Record response</button>
                     </x-empty-state>
                 </div>
             @endif

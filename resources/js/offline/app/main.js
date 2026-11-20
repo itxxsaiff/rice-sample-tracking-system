@@ -7,7 +7,7 @@ import { toast } from '../../modules/ui';
 import { h } from './util';
 import { directoryForm, directoryList, directoryShow } from './views/directory';
 import { home } from './views/home';
-import { dispatchList, dispatchNew, dispatchShow, loadingIndex, loadingNew, loadingShow, respondForm } from './views/orders';
+import { dispatchList, dispatchNew, dispatchShow, initRespondButtons, loadingIndex, loadingNew, loadingShow, respondRoute } from './views/orders';
 import { sampleNew, sampleShow, samplesList } from './views/samples';
 
 /**
@@ -21,7 +21,7 @@ const ROUTES = [
     ['/samples', samplesList], ['/samples/new', sampleNew], ['/samples/:id', sampleShow],
     ['/mills', directoryList('mill')], ['/mills/new', directoryForm('mill')], ['/mills/:id/edit', directoryForm('mill')], ['/mills/:id', directoryShow('mill')],
     ['/buyers', directoryList('buyer')], ['/buyers/new', directoryForm('buyer')], ['/buyers/:id/edit', directoryForm('buyer')], ['/buyers/:id', directoryShow('buyer')],
-    ['/dispatches', dispatchList], ['/dispatches/new', dispatchNew], ['/dispatches/:id/respond', respondForm], ['/dispatches/:id/load', loadingNew], ['/dispatches/:id', dispatchShow],
+    ['/dispatches', dispatchList], ['/dispatches/new', dispatchNew], ['/dispatches/:id/respond', respondRoute], ['/dispatches/:id/load', loadingNew], ['/dispatches/:id', dispatchShow],
     ['/loading', loadingIndex], ['/loadings/:id', loadingShow],
 ];
 
@@ -152,6 +152,7 @@ export async function bootOfflineApp() {
     startSyncTriggers();
     mountIndicator();
     onlineBanner();
+    initRespondButtons();
     try {
         const flash = sessionStorage.getItem('rst.flash');
         if (flash) { sessionStorage.removeItem('rst.flash'); setTimeout(() => toast(flash, 'info'), 300); }

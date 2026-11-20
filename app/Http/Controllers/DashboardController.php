@@ -36,7 +36,7 @@ class DashboardController extends Controller
 
         $awaitingResponse = SampleDispatch::query()
             ->where('status', DispatchStatus::Pending)
-            ->with(['buyer:id,name', 'sample:id,sample_number,rice_variety_id', 'sample.variety:id,name'])
+            ->with(['buyer:id,name', 'sample:id,sample_number,mill_id,rice_variety_id', 'sample.mill:id,name,city', 'sample.variety:id,name'])
             ->oldest('dispatch_date')->oldest('id')->limit(5)->get();
 
         $awaitingLoading = SampleDispatch::query()

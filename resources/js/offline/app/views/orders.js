@@ -1,7 +1,8 @@
 import { uuid } from '../../db';
 import { enqueue, enqueuePhotos } from '../../outbox';
 import { enableImages, input, photoInput, photosFrom, quickAddDialog, select, showErrors, textarea, values } from '../fields';
-import { isActiveDispatch, loadingProgress, sampleLabel } from '../store';
+import { Modal } from 'bootstrap';
+import { isActiveDispatch, loadContext, loadingProgress, sampleLabel } from '../store';
 import { badge, cfg, detail, empty, fmtDate, go, h, matches, newestFirst, pageHeader, pendingBadge, qty, rate, savedToast, stageBadge, today } from '../util';
 import { saveDirectory } from './directory';
 
@@ -14,8 +15,8 @@ function dispatchRow(ctx, d, { showBuyer = true } = {}) {
         <a href="#/dispatches/${h(d.uuid)}" class="min-w-0 text-body"><span class="fw-semibold mono">${h(d.dispatch_number || 'New dispatch')}</span> ${pendingBadge(d)}
             <span class="d-block small text-muted text-truncate">${showBuyer ? `${h(ctx.buyer(d.buyer_uuid)?.name || '—')} · ` : ''}${h(l.number)} ${h(l.variety)} · ${h(l.mill)}</span></a>
         <span>${stageBadge(d)}</span></div>
-        <div class="d-flex justify-content-between align-items-center gap-2 mt-1"><span class="small">${fmtDate(d.dispatch_date)}${d.status === 'confirmed' ? ` · <strong>${h(qty(d.confirmed_quantity, d.confirmed_quantity_unit))}</strong> · ${h(rate(d))}` : ''}${d.status === 'rejected' ? ` · <span class="text-muted">${h(d.rejection_reason || '')}</span>` : ''}</span>
-        ${d.status === 'pending' ? `<a href="#/dispatches/${h(d.uuid)}/respond" class="btn btn-sm btn-soft text-nowrap"><i class="bi bi-reply"></i> Record response</a>` : ''}</div></div>`;
+        <div class="d-flex justify-content-between align-items-center gap-2 mt-1"><span class="small">${fmtDate(d.dispatch_date)}${d.status === 'confirmed' ? ` · <strong>${h(qty(d.confirmed_quantity, d.confirmed_quantity_unit))}</strong> · ${h(rate(d))}` : ''}</span>
+        ${d.status === 'pending' ? `<button type="button" class="btn btn-sm btn-soft text-nowrap" data-local-respond="${h(d.uuid)}"><i class="bi bi-reply"></i> Record response</button>` : ''}</div></div>`;
 }
 
 export function dispatchList(ctx, params, query) {
@@ -183,10 +184,10 @@ export function dispatchShow(ctx, { id }) {
             </div>`;
     } else if (d.status === 'rejected') {
         response = `<div class="card mb-4"><div class="card-header"><h2><i class="bi bi-x-octagon text-danger me-2"></i>Rejected</h2></div><div class="card-body"><dl class="detail-list">
-            ${detail('Reason', h(d.rejection_reason), true)}${detail('Rejected on', fmtDate(d.rejection_date))}</dl>
+            ${detail('Rejected on', fmtDate(d.rejection_date))}</dl>
             <p class="small text-muted mb-0 mt-3"><i class="bi bi-info-circle"></i> Rejected dispatches stay in the buyer's history and do not enter loading.</p></div></div>`;
     } else {
-        response = `<div class="card mb-4">${empty('hourglass-split', `Awaiting ${ctx.buyer(d.buyer_uuid)?.name || 'buyer'}'s response`, 'Record whether the buyer confirmed or rejected the sample.', `<a href="#/dispatches/${h(d.uuid)}/respond" class="btn btn-primary"><i class="bi bi-reply"></i> Record response</a>`)}</div>`;
+        response = `<div class="card mb-4">${empty('hourglass-split', `Awaiting ${ctx.buyer(d.buyer_uuid)?.name || 'buyer'}'s response`, 'Record whether the buyer confirmed or rejected the sample.', `<button type="button" class="btn btn-primary" data-local-respond="${h(d.uuid)}"><i class="bi bi-reply"></i> Record response</button>`)}</div>`;
     }
 
     return {
@@ -213,92 +214,125 @@ export function dispatchShow(ctx, { id }) {
 
 const num = (v) => Number(v).toLocaleString('en-US');
 
-export function respondForm(ctx, { id }) {
-    const d = ctx.dispatch(id);
-    if (!d) return { title: 'Response', back: '#/dispatches', html: empty('send', 'Not on this device') };
+/**
+ * "Record buyer response" popup (same as online). Buttons: data-local-respond="<dispatch uuid>".
+ * Offline only a first response can be recorded; changing one needs the internet.
+ */
+export function openRespondDialog(ctx, d) {
     if (d.status !== 'pending') {
-        return { title: 'Response', back: `#/dispatches/${d.uuid}`, html: empty('info-circle', 'A response is already recorded', 'To change an existing response, open this dispatch when you are online.', `<a href="#/dispatches/${h(d.uuid)}" class="btn btn-light">Back</a>`) };
+        window.alert('A response is already recorded. To change it, open this dispatch when you are online.');
+        return;
     }
     const buyer = ctx.buyer(d.buyer_uuid)?.name || 'the buyer';
+    const s = ctx.sample(d.sample_uuid);
+    const l = s ? sampleLabel(ctx, s) : { number: '—', variety: '', mill: '', city: '' };
     const option = (value, icon, tone, title, hint) => `<div class="col-6"><label class="card response-option p-3 h-100 mb-0" style="cursor:pointer">
         <input type="radio" name="status" value="${value}" class="visually-hidden"><span class="stat-icon tone-${tone} mb-2"><i class="bi bi-${icon}"></i></span>
         <span class="fw-semibold">${title}</span><span class="small text-muted">${hint}</span></label></div>`;
 
-    return {
-        title: 'Buyer response',
-        back: `#/dispatches/${d.uuid}`,
-        isForm: true,
-        actionBar: true,
-        html: `${pageHeader('Record buyer response', d.dispatch_number || 'New dispatch')}
-        <form class="card" novalidate data-form>
-            <div class="form-section">${sampleSummary(ctx, d)}</div>
-            <div class="form-section"><div class="form-section-title"><i class="bi bi-reply"></i> What did ${h(buyer)} decide?</div>
-                <div class="row g-2">${option('confirmed', 'check-circle-fill', 'green', 'Confirmed', 'Buyer wants to purchase')}${option('rejected', 'x-circle-fill', 'red', 'Rejected', 'Buyer declined the sample')}</div>
-                <div class="invalid-feedback d-block" data-error-for="status"></div></div>
-            <div class="form-section d-none" data-section="confirmed"><div class="form-section-title"><i class="bi bi-clipboard-check"></i> Confirmed order</div><div class="row">
+    const el = document.createElement('div');
+    el.className = 'modal fade';
+    el.tabIndex = -1;
+    el.innerHTML = `<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"><form class="modal-content" novalidate>
+        <div class="modal-header"><div class="min-w-0"><h5 class="modal-title fw-semibold">Record buyer response</h5>
+            <div class="small text-muted text-truncate">Dispatch ${h(d.dispatch_number || '(new)')} · sent to ${h(buyer)} on ${fmtDate(d.dispatch_date)}</div></div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-body">
+            <div class="d-flex gap-3 align-items-center mb-3"><span class="stat-icon tone-navy flex-shrink-0"><i class="bi bi-basket"></i></span>
+                <div class="min-w-0 small"><div class="fw-semibold mono">${h(l.number)} · ${h(l.variety)}</div><div class="text-muted text-truncate">${h(l.mill)}${l.city ? `, ${h(l.city)}` : ''}</div></div></div>
+            <div class="form-section-title"><i class="bi bi-reply"></i> What did ${h(buyer)} decide?</div>
+            <div class="row g-2">${option('confirmed', 'check-circle-fill', 'green', 'Confirmed', 'Buyer wants to purchase')}${option('rejected', 'x-circle-fill', 'red', 'Rejected', 'Buyer declined the sample')}</div>
+            <div class="invalid-feedback d-block" data-error-for="status"></div>
+            <div class="mt-4 d-none" data-section="confirmed"><div class="form-section-title"><i class="bi bi-clipboard-check"></i> Confirmed order</div><div class="row">
                 ${input('confirmed_quantity', 'Quantity', { type: 'number', required: true, cls: 'col-7 col-md-4 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', placeholder: 'e.g. 500' })}
                 ${select('confirmed_quantity_unit', 'Unit', cfg().quantity_units || {}, { value: 'maund', required: true, cls: 'col-5 col-md-2 mb-3' })}
                 ${input('rate', 'Agreed rate', { type: 'number', required: true, cls: 'col-7 col-md-4 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', prefix: 'Rs' })}
                 ${select('rate_unit', 'Per', cfg().rate_units || {}, { value: 'per_maund', required: true, cls: 'col-5 col-md-2 mb-3' })}
-                ${select('packing_type', 'Packing type', cfg().packing_types || {}, { placeholder: 'Select packing', required: true, cls: 'col-md-4 mb-3' })}
-                ${input('confirmation_date', 'Confirmation date', { type: 'date', value: today(), required: true, cls: 'col-md-4 mb-3', attrs: `max="${today()}"` })}
+                ${select('packing_type', 'Packing type', cfg().packing_types || {}, { placeholder: 'Select packing', required: true, cls: 'col-md-6 mb-3' })}
+                ${input('confirmation_date', 'Confirmation date', { type: 'date', value: today(), required: true, cls: 'col-md-6 mb-3', attrs: `max="${today()}" min="${h(d.dispatch_date)}"` })}
                 ${textarea('packing_details', 'Packing details / notes', { cls: 'col-12 mb-0', placeholder: 'e.g. 50 kg PP bags, buyer\'s printed bags' })}
             </div></div>
-            <div class="form-section d-none" data-section="rejected"><div class="form-section-title"><i class="bi bi-x-octagon"></i> Rejection</div>
-                <div class="d-flex flex-wrap gap-2 mb-2">${['Quality not matched', 'Price not agreed', 'High moisture', 'High broken %', 'Colour / polish issue', 'Grain length short', 'Buyer not interested now'].map((r) => `<button type="button" class="btn btn-sm btn-light" data-reason="${h(r)}">${h(r)}</button>`).join('')}</div>
-                <div class="row">${textarea('rejection_reason', 'Reason', { required: true, cls: 'col-md-8 mb-3' })}${input('rejection_date', 'Rejection date', { type: 'date', value: today(), required: true, cls: 'col-md-4 mb-0', attrs: `max="${today()}"` })}</div></div>
-            <div class="action-bar"><a href="#/dispatches/${h(d.uuid)}" class="btn btn-light">Cancel</a><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Save response</button></div>
-        </form>`,
-        mount(root) {
-            const form = root.querySelector('[data-form]');
-            const sync = () => {
-                const st = form.querySelector('[name=status]:checked')?.value;
-                form.querySelectorAll('[data-section]').forEach((s) => s.classList.toggle('d-none', s.dataset.section !== st));
-                form.querySelectorAll('.response-option').forEach((o) => o.classList.toggle('selected', o.querySelector('input').checked));
-            };
-            form.addEventListener('change', (e) => { if (e.target.name === 'status') sync(); });
-            form.querySelectorAll('[data-reason]').forEach((b) => b.addEventListener('click', () => {
-                const f = form.rejection_reason;
-                f.value = f.value.trim() ? `${f.value.trim()}; ${b.dataset.reason}` : b.dataset.reason;
-            }));
+            <div class="mt-3 d-none" data-section="rejected"><div class="alert alert-light border mb-0 small"><i class="bi bi-info-circle me-1"></i> The dispatch will be marked as rejected. It stays in the buyer's history and does not go to loading.</div></div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Save response</button></div>
+    </form></div>`;
+    document.body.appendChild(el);
+    const modal = new Modal(el);
+    const form = el.querySelector('form');
+    let shown = false;
+    const close = () => (shown ? modal.hide() : el.addEventListener('shown.bs.modal', () => modal.hide(), { once: true }));
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const v = values(form);
-                const errors = {};
-                const dateOk = (field, label) => {
-                    if (!v[field]) errors[field] = `The ${label} is required.`;
-                    else if (v[field] > today()) errors[field] = `The ${label} cannot be in the future.`;
-                    else if (v[field] < d.dispatch_date) errors[field] = `The ${label} cannot be before the dispatch date.`;
-                };
-                let fields;
-                if (v.status === 'confirmed') {
-                    if (!(Number(v.confirmed_quantity) > 0)) errors.confirmed_quantity = 'Enter the confirmed quantity.';
-                    if (!(Number(v.rate) > 0)) errors.rate = 'Enter the agreed rate.';
-                    if (!v.packing_type) errors.packing_type = 'Choose the packing type.';
-                    dateOk('confirmation_date', 'confirmation date');
-                    fields = { status: 'confirmed', confirmed_quantity: Number(v.confirmed_quantity), confirmed_quantity_unit: v.confirmed_quantity_unit, rate: Number(v.rate), rate_unit: v.rate_unit, packing_type: v.packing_type, packing_details: v.packing_details || null, confirmation_date: v.confirmation_date };
-                } else if (v.status === 'rejected') {
-                    if (!v.rejection_reason) errors.rejection_reason = 'Enter the rejection reason.';
-                    dateOk('rejection_date', 'rejection date');
-                    fields = { status: 'rejected', rejection_reason: v.rejection_reason, rejection_date: v.rejection_date };
-                } else {
-                    errors.status = 'Choose whether the buyer confirmed or rejected the sample.';
-                }
-                if (showErrors(form, errors)) return;
+    const sync = () => {
+        const st = form.querySelector('[name=status]:checked')?.value;
+        form.querySelectorAll('[data-section]').forEach((sec) => sec.classList.toggle('d-none', sec.dataset.section !== st));
+        form.querySelectorAll('.response-option').forEach((o) => o.classList.toggle('selected', o.querySelector('input').checked));
+    };
+    form.addEventListener('change', (e) => { if (e.target.name === 'status') sync(); });
 
-                await enqueue(ctx.db, {
-                    type: 'dispatch.respond', payload: { target: d.uuid, base_version: d.version || 1, fields },
-                    summary: `${fields.status === 'confirmed' ? 'Confirmation' : 'Rejection'} from ${buyer}`,
-                });
-                savedToast(fields.status === 'confirmed' ? 'Confirmation' : 'Rejection');
-                go(`#/dispatches/${d.uuid}`);
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const button = form.querySelector('.btn-primary');
+        if (button.disabled) return;
+        const v = values(form);
+        const errors = {};
+        let fields;
+        if (v.status === 'confirmed') {
+            if (!(Number(v.confirmed_quantity) > 0)) errors.confirmed_quantity = 'Enter the confirmed quantity.';
+            if (!(Number(v.rate) > 0)) errors.rate = 'Enter the agreed rate.';
+            if (!v.packing_type) errors.packing_type = 'Choose the packing type.';
+            if (!v.confirmation_date) errors.confirmation_date = 'The confirmation date is required.';
+            else if (v.confirmation_date > today()) errors.confirmation_date = 'The confirmation date cannot be in the future.';
+            else if (v.confirmation_date < d.dispatch_date) errors.confirmation_date = 'The confirmation date cannot be before the dispatch date.';
+            fields = { status: 'confirmed', confirmed_quantity: Number(v.confirmed_quantity), confirmed_quantity_unit: v.confirmed_quantity_unit, rate: Number(v.rate), rate_unit: v.rate_unit, packing_type: v.packing_type, packing_details: v.packing_details || null, confirmation_date: v.confirmation_date };
+        } else if (v.status === 'rejected') {
+            fields = { status: 'rejected', rejection_date: today() < d.dispatch_date ? d.dispatch_date : today() };
+        } else {
+            errors.status = 'Choose whether the buyer confirmed or rejected the sample.';
+        }
+        if (showErrors(form, errors)) return;
+
+        button.disabled = true;
+        try {
+            await enqueue(ctx.db, {
+                type: 'dispatch.respond', payload: { target: d.uuid, base_version: d.version || 1, fields },
+                summary: `${fields.status === 'confirmed' ? 'Confirmation' : 'Rejection'} from ${buyer}`,
             });
+            savedToast(fields.status === 'confirmed' ? 'Confirmation' : 'Rejection');
+            close();
+        } finally {
+            button.disabled = false;
+        }
+    });
+    el.addEventListener('shown.bs.modal', () => { shown = true; });
+    el.addEventListener('hidden.bs.modal', () => el.remove());
+    modal.show();
+}
+
+/** Delegated handler for every "Record response" button in the offline screens. */
+export function initRespondButtons() {
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-local-respond]');
+        if (!btn) return;
+        e.preventDefault();
+        const ctx = await loadContext();
+        const d = ctx.dispatch(btn.dataset.localRespond);
+        if (d) openRespondDialog(ctx, d);
+    });
+}
+
+/** Old "#/dispatches/:id/respond" links: show the dispatch with the popup open. */
+export function respondRoute(ctx, params) {
+    const view = dispatchShow(ctx, params);
+    const d = ctx.dispatch(params.id);
+    return {
+        ...view,
+        mount(root) {
+            view.mount?.(root);
+            history.replaceState(null, '', `#/dispatches/${params.id}`);
+            if (d?.status === 'pending') openRespondDialog(ctx, d);
         },
     };
 }
-
-/* ----------------------------- loading ----------------------------- */
 
 export function loadingIndex(ctx, params, query) {
     const tab = ['pending', 'in_progress', 'completed'].includes(query.get('tab')) ? query.get('tab') : 'pending';

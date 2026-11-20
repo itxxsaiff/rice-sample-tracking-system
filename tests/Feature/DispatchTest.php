@@ -69,7 +69,8 @@ class DispatchTest extends TestCase
         $this->assertSame('9500.00', $toA->rate);
         $this->assertSame(LoadingStatus::Pending, $toA->loading_status);
         $this->assertSame(DispatchStatus::Rejected, $toB->status);
-        $this->assertSame('High moisture', $toB->rejection_reason);
+        $this->assertNull($toB->rejection_reason); // no reason is asked any more
+        $this->assertSame(now()->toDateString(), $toB->rejection_date->toDateString());
         $this->assertNull($toB->loading_status);
         $this->assertNull($toB->confirmed_quantity);
     }
@@ -81,11 +82,44 @@ class DispatchTest extends TestCase
         $this->actingAs($this->user)->put(route('dispatches.respond.update', $dispatch), ['status' => 'confirmed'])
             ->assertSessionHasErrors(['confirmed_quantity', 'confirmed_quantity_unit', 'rate', 'rate_unit', 'packing_type', 'confirmation_date']);
 
-        $this->put(route('dispatches.respond.update', $dispatch), ['status' => 'rejected'])
-            ->assertSessionHasErrors(['rejection_reason', 'rejection_date']);
+        $this->assertTrue($dispatch->fresh()->isPending());
 
         $this->put(route('dispatches.respond.update', $dispatch), ['status' => 'pending'])->assertSessionHasErrors('status');
         $this->assertTrue($dispatch->fresh()->isPending());
+    }
+
+    public function test_rejection_needs_no_reason_and_defaults_to_today(): void
+    {
+        $dispatch = SampleDispatch::factory()->create(['dispatch_date' => now()->subDays(2)]);
+
+        $this->actingAs($this->user)->from(route('dispatches.index'))
+            ->put(route('dispatches.respond.update', $dispatch), ['status' => 'rejected'])
+            ->assertSessionHasNoErrors()->assertRedirect(route('dispatches.index'));
+
+        $dispatch->refresh();
+        $this->assertTrue($dispatch->isRejected());
+        $this->assertNull($dispatch->rejection_reason);
+        $this->assertSame(now()->toDateString(), $dispatch->rejection_date->toDateString());
+        $this->assertDatabaseHas('activities', ['subject_type' => 'dispatch', 'subject_id' => $dispatch->id, 'description' => "{$dispatch->buyer->name} rejected the sample"]);
+    }
+
+    public function test_response_popup_is_offered_on_dispatch_pages(): void
+    {
+        $pending = SampleDispatch::factory()->create();
+
+        $this->actingAs($this->user);
+        $this->get(route('dispatches.index'))->assertOk()->assertSee('id="respondModal"', false)->assertSee('data-respond=', false)
+            ->assertDontSee('rejection_reason', false);
+        $this->get(route('dashboard'))->assertOk()->assertSee('data-respond=', false);
+        $this->get(route('dispatches.show', $pending))->assertOk()->assertSee('data-respond-auto', false);
+
+        // Old links open the dispatch with the popup.
+        $this->get(route('dispatches.respond', $pending))->assertRedirect(route('dispatches.show', [$pending, 'respond' => 1]));
+
+        // Invalid input comes back with the popup reopened for the same dispatch.
+        $this->from(route('dispatches.index'))->put(route('dispatches.respond.update', $pending), ['status' => 'confirmed', 'respond_dispatch_id' => $pending->id])
+            ->assertRedirect(route('dispatches.index'));
+        $this->get(route('dispatches.index'))->assertSee('data-reopen=', false)->assertSee('The confirmed quantity field is required.');
     }
 
     public function test_response_date_cannot_precede_dispatch_date(): void
@@ -216,7 +250,7 @@ class DispatchTest extends TestCase
         $this->get(route('dispatches.index', ['status' => 'rejected']))->assertOk()->assertDontSee($dispatch->dispatch_number);
         $this->get(route('dispatches.create', ['sample_ids' => [$dispatch->sample_id]]))->assertOk()->assertSee($dispatch->sample->sample_number);
         $this->get(route('dispatches.show', $dispatch))->assertOk()->assertSee('Same sample, other buyers');
-        $this->get(route('dispatches.respond', $dispatch))->assertOk();
+        $this->get(route('dispatches.respond', $dispatch))->assertRedirect();
         $this->get(route('samples.show', $dispatch->sample))->assertOk()->assertSee($dispatch->buyer->name);
         $this->getJson(route('lookup.samples', ['q' => $dispatch->sample->sample_number]))->assertOk()->assertJsonCount(1, 'data');
     }
@@ -232,6 +266,6 @@ class DispatchTest extends TestCase
 
     private function rejection(array $overrides = []): array
     {
-        return array_merge(['status' => 'rejected', 'rejection_reason' => 'High moisture', 'rejection_date' => now()->toDateString()], $overrides);
+        return array_merge(['status' => 'rejected', 'rejection_date' => now()->toDateString()], $overrides);
     }
 }

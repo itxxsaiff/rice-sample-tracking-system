@@ -65,7 +65,6 @@ async function applyLocally(db, op) {
                 packing_type: confirmed ? f.packing_type : null,
                 packing_details: confirmed ? (f.packing_details || null) : null,
                 confirmation_date: confirmed ? f.confirmation_date : null,
-                rejection_reason: confirmed ? null : f.rejection_reason,
                 rejection_date: confirmed ? null : f.rejection_date,
                 loading_status: confirmed ? (current?.loading_status || 'pending') : null,
                 ...pending,

@@ -79,7 +79,7 @@ class SyncPresenter
             'confirmed_quantity_unit' => $d->confirmed_quantity_unit, 'rate' => $d->rate !== null ? (float) $d->rate : null,
             'rate_unit' => $d->rate_unit, 'packing_type' => $d->packing_type, 'packing_details' => $d->packing_details,
             'confirmation_date' => $d->confirmation_date?->toDateString(),
-            'rejection_reason' => $d->rejection_reason, 'rejection_date' => $d->rejection_date?->toDateString(),
+            'rejection_date' => $d->rejection_date?->toDateString(),
             'loading_status' => $d->loading_status?->value, 'loading_completed_at' => $d->loading_completed_at?->toIso8601String(),
             'version' => (int) $d->version,
         ];

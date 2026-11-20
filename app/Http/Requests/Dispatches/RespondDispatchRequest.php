@@ -16,7 +16,6 @@ class RespondDispatchRequest extends FormRequest
     {
         $dispatchDate = $this->route('dispatch')->dispatch_date->format('Y-m-d');
         $confirmed = fn () => $this->input('status') === 'confirmed';
-        $rejected = fn () => $this->input('status') === 'rejected';
 
         return [
             'status' => ['required', Rule::in(['confirmed', 'rejected'])],
@@ -29,8 +28,8 @@ class RespondDispatchRequest extends FormRequest
             'packing_details' => ['nullable', 'string', 'max:2000'],
             'confirmation_date' => [Rule::requiredIf($confirmed), 'nullable', 'date', 'after_or_equal:'.$dispatchDate, 'before_or_equal:today'],
 
-            'rejection_reason' => [Rule::requiredIf($rejected), 'nullable', 'string', 'max:2000'],
-            'rejection_date' => [Rule::requiredIf($rejected), 'nullable', 'date', 'after_or_equal:'.$dispatchDate, 'before_or_equal:today'],
+            // No reason is asked for a rejection; the date defaults to today (offline: the day it was recorded).
+            'rejection_date' => ['nullable', 'date', 'after_or_equal:'.$dispatchDate, 'before_or_equal:today'],
         ];
     }
 

@@ -133,7 +133,7 @@ class LoadingTest extends TestCase
 
         $this->actingAs($this->user)->patch(route('dispatches.reopen', $dispatch))->assertForbidden();
         $this->put(route('dispatches.respond.update', $dispatch), [
-            'status' => 'rejected', 'rejection_reason' => 'Changed mind', 'rejection_date' => now()->toDateString(),
+            'status' => 'rejected', 'rejection_date' => now()->toDateString(),
         ])->assertSessionHas('error');
 
         $this->assertTrue($dispatch->fresh()->isConfirmed());

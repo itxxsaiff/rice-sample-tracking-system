@@ -86,6 +86,35 @@ class SampleDispatch extends Model
         return $this->relationLoaded('loadings') ? $this->loadings->isNotEmpty() : $this->loadings()->exists();
     }
 
+    /** What the "Record response" popup needs (needs buyer, sample.mill and sample.variety loaded). */
+    public function respondData(): array
+    {
+        return [
+            'id' => $this->id,
+            'uuid' => $this->uuid,
+            'version' => (int) $this->version,
+            'action' => route('dispatches.respond.update', $this),
+            'number' => $this->dispatch_number,
+            'buyer' => $this->buyer->name,
+            'sample' => $this->sample->sample_number.' · '.$this->sample->variety->name,
+            'mill' => $this->sample->mill->name.', '.$this->sample->mill->city,
+            'sent' => $this->dispatch_date->format('Y-m-d'),
+            'sent_label' => $this->dispatch_date->format('d M Y'),
+            'status' => $this->isPending() ? null : $this->status->value,
+            // Trucks already loaded: the order can only be corrected, not rejected.
+            'locked' => $this->isConfirmed() && $this->hasLoadings(),
+            'values' => [
+                'confirmed_quantity' => $this->confirmed_quantity !== null ? (float) $this->confirmed_quantity : null,
+                'confirmed_quantity_unit' => $this->confirmed_quantity_unit,
+                'rate' => $this->rate !== null ? (float) $this->rate : null,
+                'rate_unit' => $this->rate_unit,
+                'packing_type' => $this->packing_type,
+                'packing_details' => $this->packing_details,
+                'confirmation_date' => $this->confirmation_date?->format('Y-m-d'),
+            ],
+        ];
+    }
+
     public function isLoadingCompleted(): bool
     {
         return $this->loading_status === LoadingStatus::Completed;

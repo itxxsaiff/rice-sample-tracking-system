@@ -90,13 +90,12 @@ class SampleDispatchController extends Controller
         return view('dispatches.show', compact('dispatch', 'siblings'));
     }
 
-    public function respondForm(SampleDispatch $dispatch): View
+    /** Old "record response" links: open the dispatch with the response popup. */
+    public function respondForm(SampleDispatch $dispatch): RedirectResponse
     {
         $this->authorize('respond', $dispatch);
 
-        $dispatch->load(['buyer', 'sample.mill', 'sample.variety']);
-
-        return view('dispatches.respond', compact('dispatch'));
+        return redirect()->route('dispatches.show', [$dispatch, 'respond' => 1]);
     }
 
     public function respond(RespondDispatchRequest $request, SampleDispatch $dispatch): RedirectResponse
@@ -107,7 +106,8 @@ class SampleDispatchController extends Controller
             ? "Confirmed by {$dispatch->buyer->name}. The order is now in the Loading section."
             : "Marked as rejected by {$dispatch->buyer->name}.";
 
-        return redirect()->route('dispatches.show', $dispatch)->with('success', $message);
+        // Back to the page the popup was opened on.
+        return redirect()->back(fallback: route('dispatches.show', $dispatch))->with('success', $message);
     }
 
     public function reopen(Request $request, SampleDispatch $dispatch): RedirectResponse

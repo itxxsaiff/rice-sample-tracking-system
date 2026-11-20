@@ -66,7 +66,7 @@
                                     <span class="d-block fw-medium text-truncate">{{ $d->buyer->name }}</span>
                                     <span class="small text-muted"><span class="mono">{{ $d->sample->sample_number }}</span> {{ $d->sample->variety->name }} · {{ $d->dispatch_date->diffForHumans(['parts' => 1]) }}</span>
                                 </a>
-                                <a href="{{ route('dispatches.respond', $d) }}" class="btn btn-sm btn-soft text-nowrap"><i class="bi bi-reply"></i> Respond</a>
+                                <button type="button" class="btn btn-sm btn-soft text-nowrap" data-respond='@json($d->respondData())'><i class="bi bi-reply"></i> Respond</button>
                             </div>
                         @endforeach
                     </div>

@@ -1,29 +1,129 @@
-/** Dispatch response form: show only the section for the chosen outcome. */
+import { Modal } from 'bootstrap';
+
+/**
+ * "Record buyer response" popup.
+ *
+ * Buttons carry the dispatch as data-respond='{…}' (SampleDispatch::respondData()).
+ * Confirmed shows the order fields; Rejected needs nothing else.
+ * The form posts normally, so the offline safety net (data-offline-op) and
+ * server validation work exactly like any other form.
+ */
+const FIELDS = ['confirmed_quantity', 'confirmed_quantity_unit', 'rate', 'rate_unit', 'packing_type', 'packing_details', 'confirmation_date'];
+const DEFAULTS = { confirmed_quantity_unit: 'maund', rate_unit: 'per_maund' };
+
+function today() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function initResponseForm() {
-    const form = document.querySelector('[data-response-form]');
-    if (!form) return;
+    const el = document.getElementById('respondModal');
+    if (!el) return;
+    const form = el.querySelector('[data-response-form]');
+    const modal = Modal.getOrCreateInstance(el);
+    const q = (sel) => form.querySelector(sel);
 
     const sync = () => {
-        const status = form.querySelector('input[name="status"]:checked')?.value;
+        const status = q('input[name="status"]:checked')?.value;
         form.querySelectorAll('[data-response-section]').forEach((section) => {
             const active = section.dataset.responseSection === status;
             section.classList.toggle('d-none', !active);
-            section.querySelectorAll('input, select, textarea').forEach((el) => { el.disabled = !active; });
+            section.querySelectorAll('input, select, textarea').forEach((input) => { input.disabled = !active; });
         });
-        form.querySelectorAll('.response-option').forEach((opt) => {
-            opt.classList.toggle('selected', opt.querySelector('input').checked);
-        });
+        form.querySelectorAll('.response-option').forEach((opt) => opt.classList.toggle('selected', opt.querySelector('input').checked));
+    };
+
+    const clearErrors = () => {
+        form.querySelectorAll('.is-invalid').forEach((input) => input.classList.remove('is-invalid'));
+        form.querySelectorAll('.invalid-feedback').forEach((fb) => fb.remove());
+    };
+
+    /** Point the form at this dispatch; keepInput = the server sent the form back with errors. */
+    const prepare = (d, keepInput = false) => {
+        form.action = d.action;
+        form.dataset.offlineTarget = d.uuid;
+        form.dataset.offlineVersion = d.version;
+        q('[name="respond_dispatch_id"]').value = d.id;
+        q('[data-respond-title]').textContent = d.status ? 'Edit buyer response' : 'Record buyer response';
+        q('[data-respond-sub]').textContent = `Dispatch ${d.number} · sent to ${d.buyer} on ${d.sent_label}`;
+        q('[data-respond-sample]').textContent = d.sample;
+        q('[data-respond-mill]').textContent = d.mill;
+        q('[data-respond-question]').textContent = `What did ${d.buyer} decide?`;
+        q('[name="confirmation_date"]').min = d.sent;
+        q('[name="rejection_date"]').value = today();
+        q('[data-response-choice="rejected"]').classList.toggle('d-none', !!d.locked);
+        q('[data-respond-locked]').classList.toggle('d-none', !d.locked);
+
+        if (!keepInput) {
+            clearErrors();
+            form.querySelectorAll('input[name="status"]').forEach((r) => { r.checked = r.value === d.status; });
+            FIELDS.forEach((name) => {
+                const input = q(`[name="${name}"]`);
+                input.value = d.values?.[name] ?? DEFAULTS[name] ?? (name === 'confirmation_date' ? today() : '');
+            });
+        }
+        sync();
     };
 
     form.addEventListener('change', (e) => { if (e.target.name === 'status') sync(); });
 
-    // Quick rejection reasons.
-    form.querySelectorAll('[data-fill-reason]').forEach((btn) => btn.addEventListener('click', () => {
-        const field = form.querySelector('[name="rejection_reason"]');
-        field.value = field.value.trim() ? `${field.value.trim()}; ${btn.dataset.fillReason}` : btn.dataset.fillReason;
-        field.classList.remove('is-invalid');
-        field.focus();
-    }));
+    // Quick checks before sending (the server validates everything again). Registered on
+    // document before the offline safety net, so a change saved on the phone is complete too.
+    document.addEventListener('submit', (e) => {
+        if (e.target !== form) return;
+        clearErrors();
+        const status = q('input[name="status"]:checked')?.value;
+        let first = null;
+        const fail = (name, message) => {
+            const input = q(`[name="${name}"]`);
+            input.classList.add('is-invalid');
+            const fb = document.createElement('div');
+            fb.className = 'invalid-feedback';
+            fb.textContent = message;
+            input.after(fb);
+            first ??= input;
+        };
+        if (!status) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            window.alert('Choose whether the buyer confirmed or rejected the sample.');
+            return;
+        }
+        if (status === 'confirmed') {
+            if (!(Number(q('[name="confirmed_quantity"]').value) > 0)) fail('confirmed_quantity', 'Enter the confirmed quantity.');
+            if (!(Number(q('[name="rate"]').value) > 0)) fail('rate', 'Enter the agreed rate.');
+            if (!q('[name="packing_type"]').value) fail('packing_type', 'Choose the packing type.');
+            if (!q('[name="confirmation_date"]').value) fail('confirmation_date', 'Enter the confirmation date.');
+        }
+        if (first) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            first.focus();
+        }
+    }, true);
 
-    sync();
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-respond]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        prepare(JSON.parse(btn.dataset.respond));
+        modal.show();
+    });
+
+    // Sent back by the server with errors: reopen with what was typed.
+    if (el.dataset.reopen) {
+        prepare(JSON.parse(el.dataset.reopen), true);
+        modal.show();
+        return;
+    }
+
+    // Old "record response" links arrive as ?respond=1 on the dispatch page.
+    const params = new URLSearchParams(location.search);
+    const auto = params.has('respond') && document.querySelector('[data-respond][data-respond-auto]');
+    if (params.has('respond')) {
+        params.delete('respond');
+        history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+    }
+    if (auto) auto.click();
 }

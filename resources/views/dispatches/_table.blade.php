@@ -38,7 +38,7 @@
                             <span class="fw-semibold">{{ $dispatch->confirmedQuantityLabel() }}</span>
                             <span class="cell-sub d-block">{{ $dispatch->rateLabel() }}</span>
                         @elseif ($dispatch->isRejected())
-                            <span class="text-muted small text-truncate d-inline-block" style="max-width:200px">{{ $dispatch->rejection_reason }}</span>
+                            <span class="text-muted small">Rejected {{ $dispatch->rejection_date?->format('d M Y') }}</span>
                         @else
                             <span class="text-muted">—</span>
                         @endif
@@ -46,7 +46,7 @@
                 </td>
                 <td class="cell-actions text-end text-nowrap">
                     @if ($dispatch->isPending())
-                        <a href="{{ route('dispatches.respond', $dispatch) }}" class="btn btn-sm btn-soft"><i class="bi bi-reply"></i> Record response</a>
+                        <button type="button" class="btn btn-sm btn-soft text-nowrap" data-respond='@json($dispatch->respondData())'><i class="bi bi-reply"></i> Record response</button>
                     @else
                         <i class="bi bi-chevron-right text-muted hide-mobile d-none d-md-inline"></i>
                     @endif

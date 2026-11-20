@@ -60,7 +60,7 @@ class FullWorkflowTest extends TestCase
             'rate_unit' => 'per_maund', 'packing_type' => 'PP bag', 'packing_details' => '50 kg bags', 'confirmation_date' => now()->subDays(3)->toDateString(),
         ])->assertSessionHasNoErrors();
         $this->put(route('dispatches.respond.update', $toB), [
-            'status' => 'rejected', 'rejection_reason' => 'Price not agreed', 'rejection_date' => now()->subDays(3)->toDateString(),
+            'status' => 'rejected', 'rejection_date' => now()->subDays(3)->toDateString(),
         ])->assertSessionHasNoErrors();
 
         // Only A's order is in the Loading section.
@@ -87,7 +87,7 @@ class FullWorkflowTest extends TestCase
         // Permanent history is intact everywhere.
         $this->get(route('mills.show', $millA))->assertSee('SMP-0001')->assertSee('SMP-0002');
         $this->get(route('buyers.show', $buyerA))->assertSee($toA->dispatch_number)->assertSee('1,000 maund');
-        $this->get(route('buyers.show', $buyerB))->assertSee($toB->dispatch_number)->assertSee('Price not agreed');
+        $this->get(route('buyers.show', $buyerB))->assertSee($toB->dispatch_number)->assertSee('Rejected');
         $this->get(route('samples.show', $sample))->assertSee('Buyer A')->assertSee('Buyer B');
         $this->get(route('records.index', ['type' => 'completed']))->assertSee($toA->dispatch_number);
         $this->get(route('records.index', ['type' => 'rejections']))->assertSee($toB->dispatch_number);
