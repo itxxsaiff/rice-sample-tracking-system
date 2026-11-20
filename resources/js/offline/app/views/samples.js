@@ -108,8 +108,8 @@ function sampleRow(ctx, key, row = {}) {
                 <button type="button" class="btn btn-link btn-sm p-0 mb-1 text-decoration-none" data-local-quick-add="variety"><i class="bi bi-plus-circle"></i> New variety</button></div>
                 ${select(n('rice_variety_id'), '', ctx.varietyOptions(), { value: row.rice_variety_id || '', placeholder: 'Select variety', required: true, cls: '', attrs: 'data-variety-select' })}</div>
             ${input(n('collection_date'), 'Collection date', { type: 'date', value: row.collection_date || today(), required: true, cls: 'col-md-6 mb-3', attrs: `max="${today()}" data-row-date` })}
-            <div class="col-md-6 mb-3"><span class="form-label d-block">Sample</span><div class="form-control-plaintext fw-semibold py-2">${h(qty(cfg().sample_default?.quantity ?? 2, cfg().sample_default?.unit ?? 'kg'))} <span class="text-muted fw-normal small">· number assigned automatically</span></div></div>
-            ${textarea(n('notes'), 'Notes', { rows: 1, cls: 'col-12 mb-0', placeholder: 'Moisture, broken %, colour, price indication…' })}
+
+            ${textarea(n('notes'), 'Notes', { rows: 1, cls: 'col-md-6 mb-0', placeholder: 'Moisture, broken %, colour, price indication…' })}
         </div></div>`;
 }
 

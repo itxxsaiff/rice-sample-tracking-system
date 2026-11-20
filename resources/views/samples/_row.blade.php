@@ -15,7 +15,6 @@
                        placeholder="Search mill name or city" quick-add="#quickMillModal" quick-label="New mill" />
         <x-form.variety-select class="col-md-6 mb-3" :name="$base.'[rice_variety_id]'" :options="$varieties" :value="$row['rice_variety_id'] ?? null" />
         <x-form.input class="col-md-6 mb-3" :name="$base.'[collection_date]'" type="date" label="Collection date" :value="$row['collection_date'] ?? now()->format('Y-m-d')" required max="{{ now()->format('Y-m-d') }}" data-row-date />
-        <div class="col-md-6 mb-3"><span class="form-label d-block">Sample</span><div class="form-control-plaintext fw-semibold py-2">{{ config('rice.sample_default.quantity') }} {{ config('rice.sample_default.unit') }} <span class="text-muted fw-normal small">· number assigned automatically</span></div></div>
-        <x-form.textarea class="col-12 mb-0" :name="$base.'[notes]'" label="Notes" :value="$row['notes'] ?? null" rows="1" placeholder="Moisture, broken %, colour, price indication…" />
+        <x-form.textarea class="col-md-6 mb-0" :name="$base.'[notes]'" label="Notes" :value="$row['notes'] ?? null" rows="1" placeholder="Moisture, broken %, colour, price indication…" />
     </div>
 </div>
