@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Mills\MillRequest;
 use App\Models\Mill;
 use App\Models\RiceVariety;
+use App\Models\SampleDispatch;
 use App\Services\DirectoryService;
+use App\Support\PdfReport;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class MillController extends Controller
 {
@@ -68,6 +72,40 @@ class MillController extends Controller
         $varieties = RiceVariety::whereIn('id', $mill->samples()->select('rice_variety_id'))->orderBy('name')->pluck('name', 'id');
 
         return view('mills.show', compact('mill', 'samples', 'stats', 'varieties'));
+    }
+
+    /** Mill statement: every sample collected from this mill and what each buyer answered. */
+    public function pdf(Request $request, Mill $mill): Response
+    {
+        $this->authorize('view', $mill);
+
+        $varietyId = $request->integer('variety_id') ?: null;
+        $samples = $mill->samples()
+            ->with(['variety:id,name', 'dispatches' => fn ($q) => $q->oldest('dispatch_date')->oldest('id'), 'dispatches.buyer:id,name,city'])
+            ->when($varietyId, fn ($q) => $q->where('rice_variety_id', $varietyId))
+            ->latest('collection_date')->latest('id')
+            ->limit(PdfReport::MAX_ROWS)->get();
+
+        $dispatches = new EloquentCollection($samples->flatMap(function ($sample) use ($mill) {
+            $sample->setRelation('mill', $mill);
+
+            return $sample->dispatches->each->setRelation('sample', $sample);
+        })->sortByDesc(fn (SampleDispatch $d) => [$d->dispatch_date->format('Y-m-d'), $d->id])->values());
+        $confirmed = $dispatches->filter->isConfirmed();
+
+        return PdfReport::download('pdf.mill', [
+            'mill' => $mill,
+            'samples' => $samples,
+            'dispatches' => $dispatches,
+            'varietyName' => $varietyId ? RiceVariety::find($varietyId)?->name : null,
+            'summary' => [
+                'Samples' => number_format($samples->count()),
+                'Varieties' => number_format($samples->pluck('rice_variety_id')->unique()->count()),
+                'Sent to buyers' => number_format($dispatches->count()),
+                'Confirmed' => number_format($confirmed->count()),
+                'Agreed' => RecordsController::quantities($confirmed, 'confirmed_quantity', 'confirmed_quantity_unit'),
+            ],
+        ], 'Mill Statement', 'mill-'.$mill->name);
     }
 
     public function edit(Mill $mill): View

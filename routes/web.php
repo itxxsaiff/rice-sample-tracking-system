@@ -40,6 +40,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('operations', [SyncController::class, 'operation'])->name('operations');
     });
     Route::get('records', [RecordsController::class, 'index'])->name('records.index');
+    Route::get('records/pdf', [RecordsController::class, 'pdf'])->name('records.pdf');
 
     Route::get('account', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('account', [ProfileController::class, 'update'])->name('profile.update');
@@ -65,6 +66,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::delete('loading-photos/{photo}', [LoadingController::class, 'destroyPhoto'])->name('loading-photos.destroy');
     Route::resource('loadings', LoadingController::class)->only(['show', 'edit', 'update', 'destroy']);
 
+    Route::get('mills/{mill}/pdf', [MillController::class, 'pdf'])->name('mills.pdf');
+    Route::get('buyers/{buyer}/pdf', [BuyerController::class, 'pdf'])->name('buyers.pdf');
     Route::resource('mills', MillController::class);
     Route::resource('buyers', BuyerController::class);
     Route::resource('varieties', RiceVarietyController::class)->except(['show', 'create'])

@@ -1,5 +1,9 @@
 <x-layouts.app title="Records">
-    <x-page-header title="Records & History" subtitle="Permanent history of every dispatch, buyer response and loading. Nothing is removed when an order is completed." />
+    <x-page-header title="Records & History" subtitle="Permanent history of every dispatch, buyer response and loading. Nothing is removed when an order is completed.">
+        <x-slot:actions>
+            <a href="{{ route('records.pdf', ['type' => $type] + array_filter($filters)) }}" class="btn btn-primary" data-pdf-export><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="card">
         <nav class="nav-tabs-pills" aria-label="Record type">

@@ -145,6 +145,21 @@ function initPhotoViewer() {
     });
 }
 
+/** PDFs are made on the server, so "Export PDF" explains itself instead of failing without internet. */
+function initPdfExports() {
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('[data-pdf-export]');
+        if (!link) return;
+
+        if (navigator.onLine === false) {
+            event.preventDefault();
+            toast('Export PDF needs an internet connection. Try again when you are online.', 'warning');
+            return;
+        }
+        toast('Preparing the PDF… it will download in a moment.', 'info');
+    });
+}
+
 export function initUi() {
     initPhotoViewer();
     initToasts();
@@ -153,5 +168,6 @@ export function initUi() {
     initRowLinks();
     initAutoSubmit();
     focusFirstError();
+    initPdfExports();
     window.appToast = toast;
 }

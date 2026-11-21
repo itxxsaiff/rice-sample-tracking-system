@@ -5,14 +5,21 @@ namespace App\Http\Controllers;
 use App\Enums\LoadingStatus;
 use App\Http\Requests\Buyers\BuyerRequest;
 use App\Models\Buyer;
+use App\Models\Loading;
 use App\Services\DirectoryService;
+use App\Support\PdfReport;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class BuyerController extends Controller
 {
+    /** Status tabs on the buyer page. */
+    private const STATUSES = ['pending' => 'Awaiting response', 'confirmed' => 'Confirmed', 'rejected' => 'Rejected', 'completed' => 'Completed orders'];
+
     public function __construct(private readonly DirectoryService $directory) {}
 
     public function index(Request $request): View
@@ -53,13 +60,10 @@ class BuyerController extends Controller
     {
         $this->authorize('view', $buyer);
 
-        $status = in_array($request->input('status'), ['pending', 'confirmed', 'rejected', 'completed'], true) ? $request->input('status') : null;
+        $status = $this->statusFilter($request);
 
-        $dispatches = $buyer->dispatches()
+        $dispatches = $this->dispatchQuery($buyer, $status)
             ->with(['sample:id,sample_number,mill_id,rice_variety_id,photo_path', 'sample.mill:id,name,city', 'sample.variety:id,name'])
-            ->when($status === 'completed', fn ($q) => $q->where('loading_status', LoadingStatus::Completed))
-            ->when($status && $status !== 'completed', fn ($q) => $q->where('status', $status))
-            ->latest('dispatch_date')->latest('id')
             ->paginate(15)->withQueryString();
         $dispatches->getCollection()->each->setRelation('buyer', $buyer);
 
@@ -68,6 +72,41 @@ class BuyerController extends Controller
         $counts['all'] = $counts->only(['pending', 'confirmed', 'rejected'])->sum();
 
         return view('buyers.show', compact('buyer', 'dispatches', 'counts', 'status'));
+    }
+
+    /** Buyer statement: every sample sent to this buyer, the answers and the trucks loaded. */
+    public function pdf(Request $request, Buyer $buyer): Response
+    {
+        $this->authorize('view', $buyer);
+
+        $status = $this->statusFilter($request);
+        $dispatches = $this->dispatchQuery($buyer, $status)
+            ->with(['sample:id,sample_number,mill_id,rice_variety_id', 'sample.mill:id,name,city', 'sample.variety:id,name', 'loadings'])
+            ->limit(PdfReport::MAX_ROWS)->get();
+        $dispatches->each->setRelation('buyer', $buyer);
+
+        $loadings = Loading::query()
+            ->whereIn('sample_dispatch_id', $dispatches->modelKeys())
+            ->with(['dispatch:id,dispatch_number,buyer_id,sample_id', 'dispatch.sample:id,sample_number,mill_id,rice_variety_id', 'dispatch.sample.mill:id,name', 'dispatch.sample.variety:id,name'])
+            ->withCount('photos')
+            ->oldest('loading_date')->oldest('id')
+            ->get();
+        $confirmed = $dispatches->filter->isConfirmed();
+
+        return PdfReport::download('pdf.buyer', [
+            'buyer' => $buyer,
+            'dispatches' => $dispatches,
+            'loadings' => $loadings,
+            'statusLabel' => $status ? self::STATUSES[$status] : null,
+            'summary' => [
+                'Samples sent' => number_format($dispatches->count()),
+                'Awaiting' => number_format($dispatches->filter->isPending()->count()),
+                'Confirmed' => number_format($confirmed->count()),
+                'Rejected' => number_format($dispatches->filter->isRejected()->count()),
+                'Agreed' => RecordsController::quantities($confirmed, 'confirmed_quantity', 'confirmed_quantity_unit'),
+                'Loaded' => RecordsController::quantities($loadings, 'quantity', 'quantity_unit'),
+            ],
+        ], 'Buyer Statement', 'buyer-'.$buyer->name);
     }
 
     public function edit(Buyer $buyer): View
@@ -82,6 +121,19 @@ class BuyerController extends Controller
         $this->directory->updateBuyer($buyer, $request->validated());
 
         return redirect()->route('buyers.show', $buyer)->with('success', 'Buyer details updated.');
+    }
+
+    private function statusFilter(Request $request): ?string
+    {
+        return array_key_exists((string) $request->input('status'), self::STATUSES) ? $request->input('status') : null;
+    }
+
+    private function dispatchQuery(Buyer $buyer, ?string $status): HasMany
+    {
+        return $buyer->dispatches()
+            ->when($status === 'completed', fn ($q) => $q->where('loading_status', LoadingStatus::Completed))
+            ->when($status && $status !== 'completed', fn ($q) => $q->where('status', $status))
+            ->latest('dispatch_date')->latest('id');
     }
 
     public function destroy(Buyer $buyer): RedirectResponse

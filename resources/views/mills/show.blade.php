@@ -10,6 +10,7 @@
                     </div>
                 </div>
                 <div class="page-actions">
+                    <a href="{{ route('mills.pdf', ['mill' => $mill, 'variety_id' => request('variety_id')]) }}" class="btn btn-primary" data-pdf-export><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
                     <a href="{{ route('mills.edit', $mill) }}" class="btn btn-light"><i class="bi bi-pencil"></i> Edit</a>
                     @can('delete', $mill)
                         <form method="POST" action="{{ route('mills.destroy', $mill) }}" data-confirm="This mill has no samples yet, so it can be removed permanently." data-confirm-title="Delete {{ $mill->name }}?" data-confirm-button="Delete">

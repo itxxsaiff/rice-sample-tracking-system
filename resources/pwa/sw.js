@@ -17,7 +17,7 @@ const STATIC_CACHE = `rst-static-${VERSION}`;
 const SHELL_URL = '/offline-shell';
 const NAV_TIMEOUT_MS = 6000;
 
-const NEVER_CACHE = [/^\/sync\//, /^\/lookup\//, /^\/login/, /^\/logout/, /\/photo$/, /^\/loading-photos\//, /^\/sw\.js$/];
+const NEVER_CACHE = [/^\/sync\//, /^\/lookup\//, /^\/login/, /^\/logout/, /\/photo$/, /^\/loading-photos\//, /^\/sw\.js$/, /\/pdf$/];
 const STATIC_ASSET = /^\/(build\/|images\/|icon-|apple-touch-icon|favicon|site\.webmanifest)/;
 
 self.addEventListener('install', (event) => {
