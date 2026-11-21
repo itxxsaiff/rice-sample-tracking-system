@@ -17,7 +17,7 @@ It is **not** an ERP or accounting system. There are no payments, ledgers or inv
 | **Samples** | Auto-numbered from `SMP-0255` (`SAMPLE_NUMBER_START`), always 2 kg, linked to a mill and variety; **Add another sample** saves several independent samples from one form |
 | **Dispatches** | Send any samples to any buyers in one step: one independent record (`DSP-0001`) per sample–buyer pair |
 | **Buyer response** | Recorded in a popup from the dispatch list, dashboard or dispatch page: confirm (quantity in maund, rate per maund, bag size 5–100 kg, date) or reject (one tap, no reason); validated transitions |
-| **Loading** | Confirmed orders only; multiple trucks per order (`LD-0001`) with quantities, bags, driver, responsible person and multiple photos; complete the order when done |
+| **Loading** | Confirmed orders only; multiple trucks per order (`LD-0001`) with quantity (in the order's unit, maund), bags, bag size, driver and photos; the buyer is recorded as receiver; the order completes itself when the loaded quantity reaches the confirmed quantity |
 | **Records** | Filterable history of dispatches, confirmations, rejections, truck loadings and completed orders |
 | **Search** | One search box across samples, dispatches, mills, buyers and trucks |
 | **Users** | Admin creates employee logins, resets passwords, deactivates accounts |

@@ -23,9 +23,13 @@ class LoadingPolicy
         return ! $loading->isCompleted();
     }
 
+    /**
+     * Whoever recorded the truck can always add its photos: an order now completes by
+     * itself on its last truck, and photos taken offline upload just after the truck.
+     */
     public function addPhotos(User $user, Loading $loading): bool
     {
-        return $user->isAdmin() || ! $loading->dispatch->isLoadingCompleted();
+        return $user->isAdmin() || $loading->created_by === $user->id || ! $loading->dispatch->isLoadingCompleted();
     }
 
     public function deletePhoto(User $user, Loading $loading): bool

@@ -71,14 +71,22 @@ async function applyLocally(db, op) {
             });
             break;
         }
-        case 'loading.create':
+        case 'loading.create': {
+            // Same rules as the server: order's unit, buyer as receiver, order completes when fully loaded.
+            const order = await db.dispatches.get(p.target);
+            const unit = f.quantity_unit || order?.confirmed_quantity_unit || 'maund';
+            const receiver = f.receiver_name || (order ? (await db.buyers.get(order.buyer_uuid))?.name : null) || null;
             await db.loadings.put({
                 uuid: p.uuid, id: null, loading_number: null, dispatch_uuid: p.target,
-                ...f, quantity: Number(f.quantity), bag_count: f.bag_count ? Number(f.bag_count) : null,
-                status: f.action === 'loaded' ? 'completed' : 'pending', photos_count: 0, version: 1, ...pending,
+                ...f, quantity_unit: unit, receiver_name: receiver, quantity: Number(f.quantity), bag_count: f.bag_count ? Number(f.bag_count) : null,
+                status: f.action === 'save' ? 'pending' : 'completed', photos_count: 0, version: 1, ...pending,
             });
-            await db.dispatches.update(p.target, { loading_status: 'in_progress', ...pending });
+            const trucks = await db.loadings.where('dispatch_uuid').equals(p.target).toArray();
+            const loaded = trucks.filter((t) => t.quantity_unit === order?.confirmed_quantity_unit).reduce((sum, t) => sum + Number(t.quantity || 0), 0);
+            const full = order && Number(order.confirmed_quantity) > 0 && loaded >= Number(order.confirmed_quantity) && trucks.every((t) => t.status === 'completed');
+            await db.dispatches.update(p.target, full ? { loading_status: 'completed', loading_completed_at: now(), ...pending } : { loading_status: 'in_progress', ...pending });
             break;
+        }
         case 'loading.loaded':
             await db.loadings.update(p.target, { status: 'completed', ...pending });
             break;

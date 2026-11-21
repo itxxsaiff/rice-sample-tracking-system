@@ -134,11 +134,10 @@ step('offline confirmation + rejection saved from the popup');
 // Scenario 5: loading with two photos, last truck → completes the order
 await hashGo(`${confirmedHash}/load`);
 await page.type('input[name=truck_number]', 'off 4411');
-await page.type('input[name=receiver_name]', 'Usman');
+console.log('   receiver / unit inputs:', await page.$$eval('[name=receiver_name], [name=quantity_unit]', (e) => e.length), '| quantity prefilled:', await page.$eval('input[name=quantity]', (e) => e.value));
 await (await page.$('input[name=photos][data-image-target]')).uploadFile(SP + 'bags.jpg', SP + 'plate.jpg');
 await sleep(1500);
-await page.click('#lastTruck');
-await page.click('button[value=loaded]'); await sleep(1000);
+await page.click('.action-bar button.btn-primary'); await sleep(1000); // full quantity → completes by itself
 console.log('   order status offline:', await page.$eval('.status-badge', (e) => e.textContent.trim()));
 await shot('5-order');
 

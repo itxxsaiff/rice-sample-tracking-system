@@ -92,7 +92,7 @@ class LoadingTest extends TestCase
         $this->assertSame(LoadingStatus::InProgress, $dispatch->fresh()->loading_status);
 
         $this->post(route('loadings.store', $dispatch), $this->payload(['truck_number' => 'TLE-2222', 'action' => 'complete']))
-            ->assertRedirect(route('dispatches.show', $dispatch));
+            ->assertRedirect(route('loading.index'));
 
         $dispatch->refresh()->load('loadings');
         $this->assertCount(2, $dispatch->loadings);
@@ -104,6 +104,44 @@ class LoadingTest extends TestCase
         // Completed orders accept no more trucks.
         $this->post(route('loadings.store', $dispatch), $this->payload())->assertForbidden();
         $this->get(route('loading.index', ['tab' => 'completed']))->assertSee($dispatch->dispatch_number);
+    }
+
+    public function test_receiver_and_unit_are_automatic_and_the_order_completes_when_fully_loaded(): void
+    {
+        $dispatch = SampleDispatch::factory()->confirmed()->create(['confirmed_quantity' => 1000]);
+        $simple = fn (string $truck, int $qty) => ['truck_number' => $truck, 'loading_date' => now()->toDateString(), 'quantity' => $qty, 'packing_type' => '50 kg'];
+
+        $this->actingAs($this->user)->from(route('loading.index'))->get(route('loadings.create', $dispatch))
+            ->assertOk()->assertDontSee('name="receiver_name"', false)->assertDontSee('name="quantity_unit"', false)
+            ->assertDontSee('still loading')->assertSee('Save truck');
+
+        $this->post(route('loadings.store', $dispatch), $simple('TLE-1', 600) + ['return_to' => route('loading.index')])
+            ->assertRedirect(route('loading.index'))->assertSessionHas('success', 'Truck TLE-1 saved. 600 maund of 1,000 maund loaded (400 maund left).');
+
+        $first = Loading::firstOrFail();
+        $this->assertSame('maund', $first->quantity_unit);
+        $this->assertSame($dispatch->buyer->name, $first->receiver_name);
+        $this->assertSame(TruckLoadingStatus::Completed, $first->status);
+        $this->assertSame(LoadingStatus::InProgress, $dispatch->fresh()->loading_status);
+
+        // The truck that brings the total to the confirmed quantity completes the order by itself.
+        $this->post(route('loadings.store', $dispatch), $simple('TLE-2', 400))
+            ->assertSessionHas('success', 'Truck TLE-2 saved. Order completed: 1,000 maund loaded.');
+        $this->assertSame(LoadingStatus::Completed, $dispatch->fresh()->loading_status);
+    }
+
+    public function test_truck_recorder_can_still_add_photos_after_the_order_completed_itself(): void
+    {
+        $dispatch = SampleDispatch::factory()->confirmed()->create(['confirmed_quantity' => 100]);
+        $this->actingAs($this->user)->post(route('loadings.store', $dispatch), ['truck_number' => 'TLE-9', 'loading_date' => now()->toDateString(), 'quantity' => 100]);
+        $loading = Loading::firstOrFail();
+        $this->assertTrue($dispatch->fresh()->isLoadingCompleted());
+
+        $this->post(route('loadings.photos.store', $loading), ['photos' => [UploadedFile::fake()->image('late.jpg')]])->assertSessionHasNoErrors();
+        $this->assertCount(1, $loading->photos()->get());
+
+        $other = User::factory()->employee()->create();
+        $this->actingAs($other)->post(route('loadings.photos.store', $loading), ['photos' => [UploadedFile::fake()->image('x.jpg')]])->assertForbidden();
     }
 
     public function test_order_cannot_be_completed_while_a_truck_is_still_loading(): void

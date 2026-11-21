@@ -63,12 +63,17 @@ class LoadingController extends Controller
             'packing_type' => $dispatch->packing_type,
         ]);
 
-        return view('loading.create', compact('dispatch', 'loading'));
+        // After saving, go back to where the form was opened from (Loading list or the order).
+        $previous = url()->previous();
+        $returnTo = str_starts_with($previous, url('/')) && ! str_contains($previous, '/loadings/create') ? $previous : route('loading.index');
+
+        return view('loading.create', compact('dispatch', 'loading', 'returnTo'));
     }
 
     public function store(LoadingRequest $request, SampleDispatch $dispatch): RedirectResponse
     {
-        $action = $request->input('action', 'save');
+        // One "Save": the truck is recorded as loaded; the order completes itself when the full quantity is in.
+        $action = $request->input('action', 'loaded');
 
         $loading = $this->loadings->create(
             $dispatch, $request->fields(), $request->photos(), $request->user(),
@@ -76,14 +81,16 @@ class LoadingController extends Controller
             completeOrder: $action === 'complete',
         );
 
-        $message = match ($action) {
-            'complete' => "Truck {$loading->truck_number} saved and the order is marked as completed.",
-            'loaded' => "Truck {$loading->truck_number} saved and marked as loaded.",
-            default => "Truck {$loading->truck_number} saved. Add photos or mark it loaded when done.",
-        };
+        $dispatch->refresh()->load('loadings');
+        $loaded = collect($dispatch->loadedTotals())->map(fn ($q, $u) => SampleDispatch::formatQuantity($q, $u))->join(' + ');
+        $message = $dispatch->isLoadingCompleted()
+            ? "Truck {$loading->truck_number} saved. Order completed: {$loaded} loaded."
+            : "Truck {$loading->truck_number} saved. {$loaded} of {$dispatch->confirmedQuantityLabel()} loaded"
+                .(($left = $dispatch->remainingQuantity()) ? ' ('.SampleDispatch::formatQuantity($left, $dispatch->confirmed_quantity_unit).' left).' : '.');
 
-        return redirect()->route($action === 'complete' ? 'dispatches.show' : 'loadings.show', $action === 'complete' ? $dispatch : $loading)
-            ->with('success', $message);
+        $returnTo = (string) $request->input('return_to');
+
+        return redirect()->to(str_starts_with($returnTo, url('/')) ? $returnTo : route('loading.index'))->with('success', $message);
     }
 
     public function show(Loading $loading): View

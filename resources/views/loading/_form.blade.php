@@ -11,9 +11,8 @@
 <div class="form-section">
     <div class="form-section-title"><i class="bi bi-truck"></i> Truck</div>
     <div class="row">
-        <x-form.input class="col-6 col-md-4 mb-3" name="truck_number" label="Truck number" :value="$loading->truck_number" required placeholder="e.g. TLE-1234" autocapitalize="characters" autocomplete="off" />
-        <x-form.input class="col-6 col-md-4 mb-3" name="loading_date" type="date" label="Loading date" :value="$loading->loading_date" required max="{{ now()->format('Y-m-d') }}" />
-        <x-form.input class="col-12 col-md-4 mb-3" name="receiver_name" label="Receiving / responsible person" :value="$loading->receiver_name" autocapitalize="words" />
+        <x-form.input class="col-6 mb-3" name="truck_number" label="Truck number" :value="$loading->truck_number" required placeholder="e.g. TLE-1234" autocapitalize="characters" autocomplete="off" />
+        <x-form.input class="col-6 mb-3" name="loading_date" type="date" label="Loading date" :value="$loading->loading_date" required max="{{ now()->format('Y-m-d') }}" />
         <x-form.input class="col-6 mb-3" name="driver_name" label="Driver name" :value="$loading->driver_name" autocapitalize="words" />
         <x-form.input class="col-6 mb-3" name="driver_phone" type="tel" label="Driver phone" :value="$loading->driver_phone" inputmode="tel" />
     </div>
@@ -21,10 +20,12 @@
 <div class="form-section">
     <div class="form-section-title"><i class="bi bi-box-seam"></i> Quantity &amp; packing</div>
     <div class="row">
-        <x-form.input class="col-7 col-md-3 mb-3" name="quantity" type="number" label="Loaded quantity" :value="$loading->quantity !== null ? (float) $loading->quantity : null" required step="0.01" min="0" inputmode="decimal" />
-        <x-form.select class="col-5 col-md-3 mb-3" name="quantity_unit" label="Unit" :options="config('rice.quantity_units')" :value="$loading->quantity_unit" required />
-        <x-form.input class="col-6 col-md-3 mb-3" name="bag_count" type="number" label="No. of bags" :value="$loading->bag_count" min="0" step="1" inputmode="numeric" />
-        <x-form.select class="col-6 col-md-3 mb-3" name="packing_type" label="Packing" :options="config('rice.packing_types')" :value="$loading->packing_type" placeholder="Select" />
+        @php $unit = $loading->quantity_unit ?? $dispatch->confirmed_quantity_unit ?? config('rice.order_unit'); @endphp
+        <x-form.input class="col-md-4 mb-3" name="quantity" type="number" label="Loaded quantity" :value="$loading->quantity !== null ? (float) $loading->quantity : null" required step="0.01" min="0" inputmode="decimal"
+                      :suffix="config('rice.quantity_units')[$unit] ?? $unit"
+                      :hint="$editing ? null : 'When the full order quantity is loaded, the order is completed automatically.'" />
+        <x-form.input class="col-6 col-md-4 mb-3" name="bag_count" type="number" label="No. of bags" :value="$loading->bag_count" min="0" step="1" inputmode="numeric" />
+        <x-form.select class="col-6 col-md-4 mb-3" name="packing_type" label="Packing (bag size)" :options="config('rice.packing_types')" :value="$loading->packing_type" placeholder="Select" />
         <x-form.textarea class="col-md-6 mb-3" name="packing_details" label="Packing details" :value="$loading->packing_details" rows="2" placeholder="Bag size, marking, stitching…" />
         <x-form.textarea class="col-md-6 mb-0" name="notes" label="Loading notes" :value="$loading->notes" rows="2" />
     </div>

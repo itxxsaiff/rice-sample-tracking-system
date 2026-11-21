@@ -9,10 +9,13 @@ import { cfg, h, matches } from './util';
 
 const id = (name) => `o_${name.replace(/[^a-z0-9]+/gi, '_')}`;
 
-export function input(name, label, { value = '', type = 'text', required = false, hint = '', cls = 'mb-3', attrs = '', placeholder = '', prefix = '' } = {}) {
+export function input(name, label, { value = '', type = 'text', required = false, hint = '', cls = 'mb-3', attrs = '', placeholder = '', prefix = '', suffix = '' } = {}) {
     const field = `<input type="${type}" name="${h(name)}" id="${id(name)}" value="${h(value ?? '')}" class="form-control" ${required ? 'required' : ''} placeholder="${h(placeholder)}" ${attrs}>`;
+    const group = prefix || suffix
+        ? `<div class="input-group has-validation">${prefix ? `<span class="input-group-text">${h(prefix)}</span>` : ''}${field}${suffix ? `<span class="input-group-text">${h(suffix)}</span>` : ''}<div class="invalid-feedback"></div></div>`
+        : `${field}<div class="invalid-feedback"></div>`;
     return `<div class="${cls}">${label ? `<label class="form-label ${required ? 'required' : ''}" for="${id(name)}">${h(label)}</label>` : ''}
-        ${prefix ? `<div class="input-group has-validation"><span class="input-group-text">${h(prefix)}</span>${field}<div class="invalid-feedback"></div></div>` : `${field}<div class="invalid-feedback"></div>`}
+        ${group}
         ${hint ? `<div class="form-text">${h(hint)}</div>` : ''}</div>`;
 }
 

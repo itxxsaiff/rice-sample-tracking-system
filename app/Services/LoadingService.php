@@ -20,7 +20,8 @@ use Throwable;
  *   order (dispatch) loading_status: pending → in_progress → completed
  *   each truck (loading) status:     pending → completed
  * An order can only be completed once it has at least one truck and every
- * truck is marked loaded.
+ * truck is marked loaded. It completes by itself as soon as the loaded
+ * quantity reaches the confirmed quantity.
  */
 class LoadingService
 {
@@ -37,6 +38,12 @@ class LoadingService
             }
             if ($dispatch->isLoadingCompleted()) {
                 throw new WorkflowException('This order is already marked as completed.');
+            }
+
+            // Same unit as the order (maund) and the buyer as receiver, unless given.
+            $data['quantity_unit'] ??= $dispatch->confirmed_quantity_unit ?? config('rice.order_unit');
+            if (blank($data['receiver_name'] ?? null)) {
+                $data['receiver_name'] = $dispatch->buyer()->value('name');
             }
 
             $loading = new Loading($data);
@@ -60,7 +67,7 @@ class LoadingService
             if ($markLoaded) {
                 $this->markLoaded($loading, $user);
             }
-            if ($completeOrder) {
+            if ($completeOrder || $this->isFullyLoaded($dispatch)) {
                 $this->completeOrder($dispatch, $user);
             }
 
@@ -119,6 +126,18 @@ class LoadingService
         $loading->recordActivity('loading_completed', "Truck {$loading->truck_number} marked as loaded");
 
         return $loading;
+    }
+
+    /** Every truck loaded and together they reach the confirmed quantity. */
+    public function isFullyLoaded(SampleDispatch $dispatch): bool
+    {
+        $loadings = $dispatch->loadings()->get();
+        $dispatch->setRelation('loadings', $loadings);
+
+        return $loadings->isNotEmpty()
+            && $loadings->every(fn (Loading $l) => $l->isCompleted())
+            && (float) $dispatch->confirmed_quantity > 0
+            && ($dispatch->loadedTotals()[$dispatch->confirmed_quantity_unit] ?? 0) >= (float) $dispatch->confirmed_quantity;
     }
 
     public function completeOrder(SampleDispatch $dispatch, User $user): SampleDispatch

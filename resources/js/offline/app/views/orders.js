@@ -374,24 +374,21 @@ export function loadingNew(ctx, { id }) {
         <form class="card" novalidate data-form>
             <div class="form-section">${sampleSummary(ctx, d)}<div class="small mt-2">Confirmed: <strong>${h(qty(d.confirmed_quantity, d.confirmed_quantity_unit))}</strong> · ${h(d.packing_type || '')}</div></div>
             <div class="form-section"><div class="form-section-title"><i class="bi bi-truck"></i> Truck</div><div class="row">
-                ${input('truck_number', 'Truck number', { required: true, cls: 'col-6 col-md-4 mb-3', placeholder: 'e.g. TLE-1234', attrs: 'autocapitalize="characters" autocomplete="off"' })}
-                ${input('loading_date', 'Loading date', { type: 'date', value: today(), required: true, cls: 'col-6 col-md-4 mb-3', attrs: `max="${today()}"` })}
-                ${input('receiver_name', 'Receiving / responsible person', { cls: 'col-12 col-md-4 mb-3', attrs: 'autocapitalize="words"' })}
+                ${input('truck_number', 'Truck number', { required: true, cls: 'col-6 mb-3', placeholder: 'e.g. TLE-1234', attrs: 'autocapitalize="characters" autocomplete="off"' })}
+                ${input('loading_date', 'Loading date', { type: 'date', value: today(), required: true, cls: 'col-6 mb-3', attrs: `max="${today()}"` })}
                 ${input('driver_name', 'Driver name', { cls: 'col-6 mb-3', attrs: 'autocapitalize="words"' })}
                 ${input('driver_phone', 'Driver phone', { type: 'tel', cls: 'col-6 mb-3', attrs: 'inputmode="tel"' })}
             </div></div>
             <div class="form-section"><div class="form-section-title"><i class="bi bi-box-seam"></i> Quantity &amp; packing</div><div class="row">
-                ${input('quantity', 'Loaded quantity', { type: 'number', value: remaining || '', required: true, cls: 'col-7 col-md-3 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"' })}
-                ${select('quantity_unit', 'Unit', cfg().quantity_units || {}, { value: d.confirmed_quantity_unit || 'maund', required: true, cls: 'col-5 col-md-3 mb-3' })}
-                ${input('bag_count', 'No. of bags', { type: 'number', cls: 'col-6 col-md-3 mb-3', attrs: 'min="0" step="1" inputmode="numeric"' })}
-                ${select('packing_type', 'Packing', cfg().packing_types || {}, { value: d.packing_type || '', placeholder: 'Select', cls: 'col-6 col-md-3 mb-3' })}
+                ${input('quantity', 'Loaded quantity', { type: 'number', value: remaining || '', required: true, cls: 'col-md-4 mb-3', attrs: 'step="0.01" min="0" inputmode="decimal"', suffix: cfg().quantity_units?.[d.confirmed_quantity_unit || 'maund'] || 'Maund', hint: 'When the full order quantity is loaded, the order is completed automatically.' })}
+                ${input('bag_count', 'No. of bags', { type: 'number', cls: 'col-6 col-md-4 mb-3', attrs: 'min="0" step="1" inputmode="numeric"' })}
+                ${select('packing_type', 'Packing (bag size)', cfg().packing_types || {}, { value: d.packing_type || '', placeholder: 'Select', cls: 'col-6 col-md-4 mb-3' })}
                 ${textarea('packing_details', 'Packing details', { cls: 'col-md-6 mb-3', placeholder: 'Bag size, marking, stitching…' })}
                 ${textarea('notes', 'Loading notes', { cls: 'col-md-6 mb-0' })}
             </div></div>
             <div class="form-section"><div class="form-section-title"><i class="bi bi-camera"></i> Loading photos</div>${photoInput('photos', { multiple: true })}
                 <div class="form-text">Truck, number plate, bags and loading slip. Photos are kept on this phone until they upload.</div></div>
-            <div class="form-section"><div class="form-check"><input class="form-check-input" type="checkbox" id="lastTruck" name="last_truck" value="1"><label class="form-check-label" for="lastTruck">This is the last truck — mark the whole order as <strong>completed</strong></label></div></div>
-            <div class="action-bar"><button class="btn btn-light" name="action" value="save"><i class="bi bi-hourglass-split"></i> Save, still loading</button><button class="btn btn-primary" name="action" value="loaded"><i class="bi bi-check-lg"></i> Save &amp; mark loaded</button></div>
+            <div class="action-bar"><a href="#/dispatches/${h(d.uuid)}" class="btn btn-light">Cancel</a><button class="btn btn-primary"><i class="bi bi-check-lg"></i> Save truck</button></div>
         </form>`,
         mount(root) {
             const form = root.querySelector('[data-form]');
@@ -399,8 +396,6 @@ export function loadingNew(ctx, { id }) {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const v = values(form);
-                const action = e.submitter?.value === 'save' ? 'save' : 'loaded';
-                const complete = v.last_truck === '1';
                 const truck = (v.truck_number || '').toUpperCase().replace(/\s+/g, ' ');
                 const errors = {};
                 if (!truck) errors.truck_number = 'The truck number is required.';
@@ -409,28 +404,22 @@ export function loadingNew(ctx, { id }) {
                 else if (v.loading_date > today()) errors.loading_date = 'The loading date cannot be in the future.';
                 else if (d.confirmation_date && v.loading_date < d.confirmation_date) errors.loading_date = 'The loading date cannot be before the order was confirmed.';
                 if (!(Number(v.quantity) > 0)) errors.quantity = 'Enter the loaded quantity.';
-                if (complete && action === 'save') errors.last_truck = 'To complete the order, use "Save & mark loaded".';
-                const others = ctx.loadingsOf(d.uuid).filter((t) => t.status !== 'completed');
-                if (complete && others.length) errors.last_truck = `Mark the other truck(s) as loaded first: ${others.map((t) => t.truck_number).join(', ')}.`;
-                if (showErrors(form, errors)) { if (errors.last_truck) window.alert(errors.last_truck); return; }
+                if (showErrors(form, errors)) return;
 
                 const id2 = uuid();
                 const photos = photosFrom(form, 'photos').map((p) => ({ uuid: uuid(), blob: p, name: p.name, target_type: 'loading', target: id2 }));
                 await enqueue(ctx.db, {
                     type: 'loading.create',
                     payload: { uuid: id2, target: d.uuid, fields: {
-                        truck_number: truck, loading_date: v.loading_date, quantity: Number(v.quantity), quantity_unit: v.quantity_unit,
+                        truck_number: truck, loading_date: v.loading_date, quantity: Number(v.quantity),
                         bag_count: v.bag_count ? Number(v.bag_count) : null, packing_type: v.packing_type || null, packing_details: v.packing_details || null,
-                        receiver_name: v.receiver_name || null, driver_name: v.driver_name || null, driver_phone: v.driver_phone || null, notes: v.notes || null, action,
+                        driver_name: v.driver_name || null, driver_phone: v.driver_phone || null, notes: v.notes || null, action: 'loaded',
                     } },
                     summary: `Truck ${truck} for ${ctx.buyer(d.buyer_uuid)?.name || 'order'}`,
                     photos,
                 });
-                if (complete) {
-                    await enqueue(ctx.db, { type: 'order.complete', payload: { target: d.uuid }, summary: `Complete order for ${ctx.buyer(d.buyer_uuid)?.name || 'buyer'}` });
-                }
                 savedToast(`Truck ${truck}`);
-                go(complete ? `#/dispatches/${d.uuid}` : `#/loadings/${id2}`);
+                go(`#/dispatches/${d.uuid}`);
             });
         },
     };

@@ -106,19 +106,6 @@ function focusFirstError() {
     }
 }
 
-/** "Last truck" checkbox switches the primary button to complete the whole order. */
-function initCompleteToggle() {
-    const toggle = document.querySelector('[data-complete-toggle]');
-    const button = document.querySelector('[data-loaded-button]');
-    if (!toggle || !button) return;
-    const label = button.querySelector('span');
-    const original = label.textContent;
-    toggle.addEventListener('change', () => {
-        button.value = toggle.checked ? 'complete' : 'loaded';
-        label.textContent = toggle.checked ? 'Save & complete order' : original;
-    });
-}
-
 /** Full-screen photo viewer with previous/next for [data-viewer-item] links. */
 function initPhotoViewer() {
     const modalEl = document.getElementById('photoViewer');
@@ -159,7 +146,6 @@ function initPhotoViewer() {
 }
 
 export function initUi() {
-    initCompleteToggle();
     initPhotoViewer();
     initToasts();
     initConfirmations();

@@ -13,7 +13,7 @@ import { checkServer } from './sync';
  * same as the sync API, so the server validates them with the same rules.
  */
 
-const SKIP = new Set(['_token', '_method', 'after']);
+const SKIP = new Set(['_token', '_method', 'after', 'return_to']);
 
 function formFields(form) {
     const fields = {};

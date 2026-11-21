@@ -33,7 +33,8 @@ class LoadingRequest extends FormRequest
             'truck_number' => ['required', 'string', 'max:30', 'regex:/^[A-Z0-9][A-Z0-9 \-\/]*$/'],
             'loading_date' => array_filter(['required', 'date', 'before_or_equal:today', $earliest ? 'after_or_equal:'.$earliest : null]),
             'quantity' => ['required', 'numeric', 'gt:0', 'max:9999999999'],
-            'quantity_unit' => ['required', Rule::in(array_keys(config('rice.quantity_units')))],
+            // Unit and receiver are automatic (the order's unit, the buyer); only older offline changes send them.
+            'quantity_unit' => ['nullable', Rule::in(array_keys(config('rice.quantity_units')))],
             'bag_count' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'packing_type' => ['nullable', Rule::in(array_keys(config('rice.packing_types')))],
             'packing_details' => ['nullable', 'string', 'max:2000'],
