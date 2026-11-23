@@ -8,10 +8,13 @@ use App\Models\Mill;
 use App\Models\RiceVariety;
 use App\Models\Sample;
 use App\Services\SampleService;
+use App\Support\PdfReport;
 use App\Support\PhotoStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SampleController extends Controller
@@ -38,6 +41,49 @@ class SampleController extends Controller
             'varieties' => RiceVariety::orderBy('name')->pluck('name', 'id'),
             'cities' => Mill::query()->distinct()->orderBy('city')->pluck('city'),
         ]);
+    }
+
+    /** The samples list with its filters as a PDF (every matching sample, with the buyers it went to). */
+    public function pdf(Request $request): Response
+    {
+        $this->authorize('viewAny', Sample::class);
+
+        $filters = array_filter($request->only(['q', 'mill_id', 'variety_id', 'city', 'from', 'to', 'sent']), fn ($v) => is_string($v) && $v !== '');
+        $query = Sample::query()->filter($filters);
+        $total = $query->count();
+        $samples = $query
+            ->with(['mill:id,name,city', 'variety:id,name', 'dispatches' => fn ($q) => $q->oldest('dispatch_date')->oldest('id'), 'dispatches.buyer:id,name'])
+            ->latest('collection_date')->latest('id')
+            ->limit(PdfReport::MAX_ROWS)->get();
+
+        $date = fn (string $d) => rescue(fn () => Carbon::parse($d)->format('d M Y'), $d, false);
+        $sent = $samples->filter(fn (Sample $s) => $s->dispatches->isNotEmpty());
+
+        return PdfReport::download('pdf.samples', [
+            'samples' => $samples,
+            'total' => $total,
+            'truncated' => $total > $samples->count(),
+            'criteria' => array_filter([
+                'Search' => $filters['q'] ?? null,
+                'Mill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id'])?->label() : null,
+                'Variety' => isset($filters['variety_id']) ? RiceVariety::find($filters['variety_id'])?->name : null,
+                'City' => $filters['city'] ?? null,
+                'Collected' => match (true) {
+                    isset($filters['from'], $filters['to']) => $date($filters['from']).' – '.$date($filters['to']),
+                    isset($filters['from']) => 'from '.$date($filters['from']),
+                    isset($filters['to']) => 'up to '.$date($filters['to']),
+                    default => 'All dates',
+                },
+                'Showing' => ['no' => 'Not sent yet', 'yes' => 'Sent to buyers'][$filters['sent'] ?? ''] ?? null,
+            ]),
+            'summary' => [
+                'Samples' => number_format($samples->count()),
+                'Mills' => number_format($samples->pluck('mill_id')->unique()->count()),
+                'Varieties' => number_format($samples->pluck('rice_variety_id')->unique()->count()),
+                'Sent to buyers' => number_format($sent->count()),
+                'Not sent yet' => number_format($samples->count() - $sent->count()),
+            ],
+        ], 'Sample Register', 'samples');
     }
 
     public function create(Request $request): View

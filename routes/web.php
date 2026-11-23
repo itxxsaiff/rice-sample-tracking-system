@@ -46,6 +46,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('account', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('account/password', [ProfileController::class, 'password'])->name('profile.password');
 
+    Route::get('samples/pdf', [SampleController::class, 'pdf'])->name('samples.pdf');
     Route::get('samples/{sample}/photo', [SampleController::class, 'photo'])->name('samples.photo');
     Route::resource('samples', SampleController::class);
     Route::redirect('bundles/{any?}', '/samples')->where('any', '.*'); // bundles were removed; old links land on Samples

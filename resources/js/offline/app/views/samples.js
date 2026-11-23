@@ -1,6 +1,7 @@
 import { uuid } from '../../db';
 import { enqueue } from '../../outbox';
 import { input, mountPicker, picker, quickAddDialog, select, setPicker, showErrors, textarea, values } from '../fields';
+import { pdfButton, runExport, samplesReport } from '../reports';
 import { sampleLabel } from '../store';
 import { cfg, detail, empty, fmtDate, go, h, matches, newestFirst, pageHeader, pendingBadge, qty, savedToast, stageBadge, today } from '../util';
 import { saveDirectory } from './directory';
@@ -17,7 +18,7 @@ export function samplesList(ctx, params, query) {
 
     return {
         title: 'Samples',
-        html: `${pageHeader('Samples', 'Samples on this device.', '<a href="#/samples/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add sample</a>')}
+        html: `${pageHeader('Samples', `Samples on this device (last ${ctx.historyDays || 10} days and any still in use).`, `${pdfButton}<a href="#/samples/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add sample</a>`)}
         <div class="card">
             <form class="filter-bar" data-search><div class="row g-2">
                 <div class="col-12 col-lg-8"><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="Sample no., mill, variety"></div></div>
@@ -32,6 +33,7 @@ export function samplesList(ctx, params, query) {
             form.addEventListener('submit', (e) => e.preventDefault());
             form.q.addEventListener('input', update);
             form.variety.addEventListener('change', update);
+            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => samplesReport(ctx, rows, { q, variety })));
         },
     };
 }

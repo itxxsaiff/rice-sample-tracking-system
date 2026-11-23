@@ -15,11 +15,11 @@ It is **not** an ERP or accounting system. There are no payments, ledgers or inv
 | **Buyers** | Permanent profiles with every dispatch, response, agreed quantity/rate, packing and loading |
 | **Rice varieties** | Editable list (1121, 1509, Super Basmati, … any variety); deactivate instead of delete |
 | **Samples** | Auto-numbered from `SMP-0255` (`SAMPLE_NUMBER_START`), always 2 kg, linked to a mill and variety; **Add another sample** saves several independent samples from one form |
-| **Dispatches** | Send any samples to any buyers in one step: one independent record (`DSP-0001`) per sample–buyer pair |
+| **Dispatches** | Send any samples to any buyers in one step: one independent record (`DSP-0001`) per sample–buyer pair. **Add another dispatch** adds more blocks (each with its own samples, buyers, date and notes); one button saves them all, or none if one is invalid |
 | **Buyer response** | Recorded in a popup from the dispatch list, dashboard or dispatch page: confirm (quantity in maund, rate per maund, bag size 5–100 kg, date) or reject (one tap, no reason); validated transitions |
 | **Loading** | Confirmed orders only; multiple trucks per order (`LD-0001`) with quantity (in the order's unit, maund), bags, bag size, driver and photos; the buyer is recorded as receiver; the order completes itself when the loaded quantity reaches the confirmed quantity |
 | **Records** | Filterable history of dispatches, confirmations, rejections, truck loadings and completed orders |
-| **PDF export** | **Export PDF** on Records (the current tab and filters, every matching row), on each buyer (statement of all samples sent, answers and trucks loaded) and on each mill (all samples collected and every buyer's answer). A4 with the company letterhead and page numbers; made on the server with dompdf |
+| **PDF export** | **Export PDF** on Records (the current tab and filters, every matching row), Samples (the current filters, with the buyers each sample went to), each buyer (statement of all samples sent, answers and trucks loaded) and each mill (all samples collected and every buyer's answer). A4 with the company letterhead and page numbers; made on the server with dompdf, or on the device with jsPDF when offline |
 | **Search** | One search box across samples, dispatches, mills, buyers and trucks |
 | **Users** | Admin creates employee logins, resets passwords, deactivates accounts |
 | **Offline mode** | Installable app that keeps working without internet and syncs automatically when the connection returns (see below) |
@@ -68,7 +68,9 @@ The app is an installable Progressive Web App. Online it behaves exactly as befo
 | Buyer responses | Confirm or reject a pending dispatch in the response popup |
 | Loading | Record trucks with photos, mark trucks loaded, complete the order |
 | Records | Same tabs as online, for the data on the device |
-| Online only | PDF export, global search, Manage Users, My Account, deleting, editing an existing response, editing loaded trucks (their menu items stay visible and explain this) |
+| PDF export | Records, Samples, buyer and mill PDFs made on the device from its data (last `OFFLINE_HISTORY_DAYS` days and open orders), same layout as online, marked "offline copy" |
+| Menu | The same full menu as online, from the menu button on phones |
+| Online only | Global search, Manage Users, My Account, deleting, editing an existing response, editing loaded trucks (their menu items stay visible and explain this) |
 
 Records not yet on the server carry a **Not synced** badge. Saving always says *"Saved on this device…"*; a separate *"N changes synced with the server"* message appears only when the server has accepted them. The device keeps the last `OFFLINE_HISTORY_DAYS` days (default **10**, counted back from today) of samples and dispatches, plus all open work (responses still awaited, orders still being loaded) whatever its age. Mills, buyers and varieties are always kept in full.
 

@@ -97,6 +97,24 @@ class PdfExportTest extends TestCase
         $this->assertSame('1', $this->pdfData['summary']['Confirmed']);
     }
 
+    public function test_samples_pdf_follows_the_list_filters(): void
+    {
+        $mill = Mill::factory()->create();
+        $sent = Sample::factory()->create(['mill_id' => $mill->id]);
+        $notSent = Sample::factory()->create(['mill_id' => $mill->id]);
+        Sample::factory()->create(); // another mill
+        SampleDispatch::factory()->create(['sample_id' => $sent->id]);
+
+        $this->assertPdf($this->actingAs($this->user)->get(route('samples.pdf', ['mill_id' => $mill->id])), 'samples');
+        $this->assertSame('Sample Register', $this->pdfData['title']);
+        $this->assertEqualsCanonicalizing([$sent->id, $notSent->id], $this->pdfData['samples']->modelKeys());
+        $this->assertSame(['Samples' => '2', 'Mills' => '1', 'Varieties' => (string) collect([$sent, $notSent])->pluck('rice_variety_id')->unique()->count(), 'Sent to buyers' => '1', 'Not sent yet' => '1'], $this->pdfData['summary']);
+
+        $this->actingAs($this->user)->get(route('samples.pdf', ['mill_id' => $mill->id, 'sent' => 'no']))->assertOk();
+        $this->assertSame([$notSent->id], $this->pdfData['samples']->modelKeys());
+        $this->assertSame('Not sent yet', $this->pdfData['criteria']['Showing']);
+    }
+
     public function test_pages_offer_the_export_button(): void
     {
         $buyer = Buyer::factory()->create();
@@ -105,6 +123,7 @@ class PdfExportTest extends TestCase
         $this->actingAs($this->user)->get(route('records.index', ['type' => 'rejections']))->assertSee(route('records.pdf', ['type' => 'rejections']), false);
         $this->actingAs($this->user)->get(route('buyers.show', $buyer))->assertSee(route('buyers.pdf', $buyer), false);
         $this->actingAs($this->user)->get(route('mills.show', $mill))->assertSee(route('mills.pdf', $mill), false);
+        $this->actingAs($this->user)->get(route('samples.index', ['sent' => 'no']))->assertSee(route('samples.pdf', ['sent' => 'no']), false);
     }
 
     public function test_guests_cannot_export(): void
@@ -112,5 +131,6 @@ class PdfExportTest extends TestCase
         $this->get(route('records.pdf'))->assertRedirect(route('login'));
         $this->get(route('buyers.pdf', Buyer::factory()->create()))->assertRedirect(route('login'));
         $this->get(route('mills.pdf', Mill::factory()->create()))->assertRedirect(route('login'));
+        $this->get(route('samples.pdf'))->assertRedirect(route('login'));
     }
 }

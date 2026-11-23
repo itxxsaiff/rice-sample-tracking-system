@@ -193,9 +193,9 @@ class DispatchTest extends TestCase
     {
         $existing = SampleDispatch::factory()->create();
 
-        $this->actingAs($this->user)->post(route('dispatches.store'), [
+        $this->actingAs($this->user)->post(route('dispatches.store'), ['dispatches' => [[
             'sample_ids' => [$existing->sample_id], 'buyer_ids' => [$existing->buyer_id], 'dispatch_date' => now()->toDateString(),
-        ])->assertSessionHasErrors('buyer_ids');
+        ]]])->assertSessionHasErrors('dispatches.0.buyer_ids');
 
         $this->assertSame(1, SampleDispatch::count());
     }
@@ -216,9 +216,80 @@ class DispatchTest extends TestCase
         $sample = Sample::factory()->create(['collection_date' => now()]);
         $buyer = Buyer::factory()->create();
 
-        $this->actingAs($this->user)->post(route('dispatches.store'), [
+        $this->actingAs($this->user)->post(route('dispatches.store'), ['dispatches' => [[
             'sample_ids' => [$sample->id], 'buyer_ids' => [$buyer->id], 'dispatch_date' => now()->subDays(3)->toDateString(),
-        ])->assertSessionHasErrors('dispatch_date');
+        ]]])->assertSessionHasErrors('dispatches.0.dispatch_date');
+    }
+
+    public function test_several_dispatches_are_saved_together_from_one_form(): void
+    {
+        [$sampleA, $sampleB] = Sample::factory()->count(2)->create(['collection_date' => now()->subDays(5)]);
+        [$buyerX, $buyerY, $buyerZ] = Buyer::factory()->count(3)->create();
+
+        $this->actingAs($this->user)->post(route('dispatches.store'), ['dispatches' => [
+            3 => ['sample_ids' => [$sampleA->id], 'buyer_ids' => [$buyerX->id], 'dispatch_date' => now()->subDays(2)->toDateString(), 'notes' => 'By courier'],
+            7 => ['sample_ids' => [$sampleB->id, $sampleA->id], 'buyer_ids' => [$buyerY->id, $buyerZ->id], 'dispatch_date' => now()->toDateString()],
+        ]])->assertSessionHasNoErrors()->assertRedirect(route('dispatches.index', ['status' => 'pending']));
+
+        $pairs = SampleDispatch::orderBy('id')->get()->map(fn ($d) => [$d->sample_id, $d->buyer_id, $d->dispatch_date->toDateString(), $d->notes])->all();
+        $this->assertSame([
+            [$sampleA->id, $buyerX->id, now()->subDays(2)->toDateString(), 'By courier'],
+            [$sampleA->id, $buyerY->id, now()->toDateString(), null],
+            [$sampleA->id, $buyerZ->id, now()->toDateString(), null],
+            [$sampleB->id, $buyerY->id, now()->toDateString(), null],
+            [$sampleB->id, $buyerZ->id, now()->toDateString(), null],
+        ], $pairs);
+        $this->assertSame(['DSP-0001', 'DSP-0002', 'DSP-0003', 'DSP-0004', 'DSP-0005'], SampleDispatch::orderBy('id')->pluck('dispatch_number')->all());
+    }
+
+    public function test_nothing_is_saved_when_one_dispatch_on_the_form_is_invalid(): void
+    {
+        $sample = Sample::factory()->create(['collection_date' => now()->subDay()]);
+        $buyer = Buyer::factory()->create();
+
+        $this->actingAs($this->user)->post(route('dispatches.store'), ['dispatches' => [
+            ['sample_ids' => [$sample->id], 'buyer_ids' => [$buyer->id], 'dispatch_date' => now()->toDateString()],
+            ['sample_ids' => [], 'buyer_ids' => [$buyer->id], 'dispatch_date' => now()->toDateString()],
+        ]])->assertSessionHasErrors(['dispatches.1.sample_ids' => 'Choose at least one sample to send.']);
+
+        $this->assertSame(0, SampleDispatch::count());
+
+        // Both dispatches come back on the form as they were entered.
+        $this->get(route('dispatches.create'))->assertOk()
+            ->assertSee('dispatches[0][buyer_ids][]', false)
+            ->assertSee('dispatches[1][buyer_ids][]', false)
+            ->assertSee($sample->sample_number);
+    }
+
+    public function test_the_same_sample_to_the_same_buyer_twice_on_one_form_is_blocked(): void
+    {
+        $sample = Sample::factory()->create(['collection_date' => now()->subDay()]);
+        $buyer = Buyer::factory()->create();
+        $group = ['sample_ids' => [$sample->id], 'buyer_ids' => [$buyer->id], 'dispatch_date' => now()->toDateString()];
+
+        $this->actingAs($this->user)->post(route('dispatches.store'), ['dispatches' => [$group, $group]])
+            ->assertSessionHasErrors('dispatches.1.buyer_ids');
+        $this->assertSame(0, SampleDispatch::count());
+    }
+
+    public function test_a_form_opened_before_the_update_still_saves(): void
+    {
+        $sample = Sample::factory()->create(['collection_date' => now()->subDay()]);
+        $buyer = Buyer::factory()->create();
+
+        $this->actingAs($this->user)->post(route('dispatches.store'), [
+            'sample_ids' => [$sample->id], 'buyer_ids' => [$buyer->id], 'dispatch_date' => now()->toDateString(),
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(1, SampleDispatch::count());
+    }
+
+    public function test_dispatch_form_offers_another_dispatch(): void
+    {
+        $this->actingAs($this->user)->get(route('dispatches.create'))->assertOk()
+            ->assertSee('Add another dispatch')
+            ->assertSee('dispatches[0][sample_ids]', false)
+            ->assertSee('dispatches[__KEY__][buyer_ids][]', false);
     }
 
     public function test_buyer_history_shows_all_dispatch_outcomes(): void

@@ -145,18 +145,27 @@ function initPhotoViewer() {
     });
 }
 
-/** PDFs are made on the server, so "Export PDF" explains itself instead of failing without internet. */
+/**
+ * Export PDF on online pages: the PDF is made on the server. Without a
+ * connection, open the offline copy of the same page instead (its Export PDF
+ * makes the PDF on the device from the last days of data).
+ */
 function initPdfExports() {
-    document.addEventListener('click', (event) => {
-        const link = event.target.closest('[data-pdf-export]');
-        if (!link) return;
+    document.addEventListener('click', async (event) => {
+        const link = event.target.closest('a[data-pdf-export]');
+        if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey) return;
+        event.preventDefault();
 
-        if (navigator.onLine === false) {
-            event.preventDefault();
-            toast('Export PDF needs an internet connection. Try again when you are online.', 'warning');
+        const { checkServer } = await import('../offline/sync');
+        if ((await checkServer()).reachable) {
+            toast('Preparing the PDF… it will download in a moment.', 'info');
+            window.location.href = link.href;
             return;
         }
-        toast('Preparing the PDF… it will download in a moment.', 'info');
+        try {
+            sessionStorage.setItem('rst.flash', 'No internet: this is the offline copy. Tap Export PDF again to make the PDF from the data on this device.');
+        } catch { /* ignore */ }
+        window.location.reload();
     });
 }
 

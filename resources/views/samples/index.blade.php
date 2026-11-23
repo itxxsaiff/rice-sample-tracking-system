@@ -1,6 +1,7 @@
 <x-layouts.app title="Samples">
     <x-page-header title="Samples" subtitle="Every sample collected, linked to its mill.">
         <x-slot:actions>
+            <a href="{{ route('samples.pdf', array_filter($filters, 'is_string')) }}" class="btn btn-light" data-pdf-export><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
             <a href="{{ route('samples.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add sample</a>
         </x-slot:actions>
     </x-page-header>

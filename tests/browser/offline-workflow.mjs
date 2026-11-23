@@ -100,10 +100,16 @@ await shot('1-samples');
 await hashGo(`#/dispatches/new?sample=${sampleUuid}`);
 await page.click('[data-new-buyer]');
 await fillModal({ name: `Offline Buyer ${stamp}`, city: 'Karachi' });
-const boxes = await page.$$('#buyerList input[type=checkbox]');
-const checked = await page.$$eval('#buyerList input:checked', (i) => i.length);
+const boxes = await page.$$('[data-group] [data-list="buyers"] input[type=checkbox]');
+const checked = await page.$$eval('[data-group] [data-list="buyers"] input:checked', (i) => i.length);
 await boxes[1].click(); await sleep(200);
 console.log('   buyers ticked:', checked + 1, '| summary:', await page.$eval('[data-summary] span', (e) => e.textContent));
+// "Add another dispatch" adds a second block; taking it away again leaves the first as it was.
+await page.click('[data-add-group]'); await sleep(200);
+const blocks = await page.$$eval('[data-group]', (g) => g.length);
+await page.evaluate(() => [...document.querySelectorAll('[data-group]')].at(-1).querySelector('[data-remove-group]').click()); await sleep(200);
+console.log('   dispatch blocks: added ->', blocks, '| after taking one away ->', await page.$$eval('[data-group]', (g) => g.length));
+if (blocks !== 2) throw new Error('Add another dispatch did not add a block');
 await page.click('.action-bar button.btn-primary'); await sleep(900);
 step(`offline dispatches saved → ${await page.evaluate(() => location.hash)}`);
 

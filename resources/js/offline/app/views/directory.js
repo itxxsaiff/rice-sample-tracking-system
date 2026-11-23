@@ -2,6 +2,7 @@ import { uuid } from '../../db';
 import { enqueue } from '../../outbox';
 import { input, showErrors, textarea, values } from '../fields';
 import { sampleLabel } from '../store';
+import { buyerReport, millReport, pdfButton, runExport } from '../reports';
 import { cfg, detail, empty, fmtDate, go, h, matches, newestFirst, pageHeader, pendingBadge, qty, rate, savedToast, stageBadge } from '../util';
 
 /** Rice mills and buyers: list, profile with history, add/edit — offline. */
@@ -78,7 +79,7 @@ export function directoryShow(kind) {
                 <div class="d-flex flex-wrap gap-3 align-items-start justify-content-between">
                     <div class="d-flex gap-3 align-items-center min-w-0"><span class="stat-icon tone-${kind === 'mill' ? 'navy' : 'purple'}"><i class="bi bi-${k.icon}"></i></span>
                         <div class="min-w-0"><h1 class="h4 fw-bold mb-0">${h(r.name)}</h1><div class="text-muted"><i class="bi bi-geo-alt"></i> ${h(r.city)} ${pendingBadge(r)}</div></div></div>
-                    <div class="page-actions"><a href="#/${k.route}/${h(r.uuid)}/edit" class="btn btn-light"><i class="bi bi-pencil"></i> Edit</a></div>
+                    <div class="page-actions">${pdfButton.replace('btn-light', 'btn-primary')}<a href="#/${k.route}/${h(r.uuid)}/edit" class="btn btn-light"><i class="bi bi-pencil"></i> Edit</a></div>
                 </div><hr>
                 <dl class="detail-list">
                     ${detail('Contact person', h(r.contact_person || '—'))}
@@ -87,6 +88,9 @@ export function directoryShow(kind) {
                     ${r.notes ? detail('Notes', h(r.notes), true) : ''}
                 </dl></div></div>
                 ${history}`,
+            mount(root) {
+                root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => (kind === 'mill' ? millReport(ctx, r) : buyerReport(ctx, r))));
+            },
         };
     };
 }

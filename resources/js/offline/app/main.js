@@ -1,3 +1,4 @@
+import { Offcanvas } from 'bootstrap';
 import { mountIndicator, openSyncPanel } from '../indicator';
 import { openDb } from '../db';
 import { readActiveUser } from '../session';
@@ -78,7 +79,8 @@ function buildNav(active) {
             return `<a href="#${href}" class="sidebar-link ${on ? 'active' : ''}"><i class="bi bi-${icon}"></i><span>${label}</span></a>`;
         }).join('')}`;
     }).join('');
-    document.querySelector('[data-offline-nav]').innerHTML = html;
+    // Sidebar (desktop) and the menu drawer (phones) show the same links.
+    document.querySelectorAll('[data-offline-nav]').forEach((nav) => { nav.innerHTML = html; });
     document.querySelectorAll('.bottom-nav a').forEach((a) => {
         const href = a.getAttribute('href').replace(/^#/, '');
         a.classList.toggle('active', href === '/' ? active === '/' : active.startsWith(href));
@@ -103,9 +105,7 @@ async function render() {
         root.innerHTML = result.html;
         document.title = `${result.title} · Rice Samples`;
         document.querySelector('[data-page-title]').textContent = result.title;
-        const back = document.querySelector('[data-back]');
-        back.setAttribute('href', result.back || '#/');
-        back.classList.toggle('invisible', path === '/');
+        document.querySelectorAll('.offcanvas.show').forEach((el) => Offcanvas.getInstance(el)?.hide());
         document.body.classList.toggle('has-action-bar', !!result.actionBar);
         document.body.dataset.editing = result.isForm ? '1' : '';
         buildNav(path);
@@ -147,7 +147,7 @@ export async function bootOfflineApp() {
         return;
     }
 
-    document.querySelector('[data-user-name]').textContent = user.name;
+    document.querySelectorAll('[data-user-name]').forEach((el) => { el.textContent = user.name; });
     document.querySelector('[data-user-initials]').textContent = user.name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
 
     if (!location.hash) history.replaceState(null, '', `#${await initialRoute(user)}`);

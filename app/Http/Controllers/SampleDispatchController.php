@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Dispatches\RespondDispatchRequest;
-use App\Http\Requests\Dispatches\StoreDispatchRequest;
+use App\Http\Requests\Dispatches\StoreDispatchesRequest;
 use App\Models\Buyer;
 use App\Models\Mill;
 use App\Models\RiceVariety;
@@ -12,6 +12,7 @@ use App\Models\SampleDispatch;
 use App\Services\DispatchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SampleDispatchController extends Controller
@@ -47,25 +48,34 @@ class SampleDispatchController extends Controller
     {
         $this->authorize('create', SampleDispatch::class);
 
-        $sampleIds = collect($request->old('sample_ids', $request->input('sample_ids', [])))->filter()->map(fn ($id) => (int) $id);
-        $selectedSamples = Sample::with(['mill:id,name,city', 'variety:id,name'])->findMany($sampleIds);
+        // After a failed save, every dispatch on the form comes back as it was entered.
+        $groups = $request->old('dispatches') ?: [[
+            'sample_ids' => $request->input('sample_ids', []),
+            'buyer_ids' => $request->input('buyer_ids', []),
+            'dispatch_date' => now()->toDateString(),
+        ]];
+
+        $ids = fn ($values) => collect((array) $values)->filter()->map(fn ($id) => (int) $id)->values();
+        $samples = Sample::with(['mill:id,name,city', 'variety:id,name'])
+            ->findMany(collect($groups)->flatMap(fn ($g) => $ids($g['sample_ids'] ?? [])))
+            ->keyBy('id');
 
         return view('dispatches.create', [
-            'selectedSamples' => $selectedSamples->map(fn (Sample $s) => self::sampleOption($s))->values(),
+            'groups' => collect($groups)->map(fn ($g) => [
+                'samples' => $ids($g['sample_ids'] ?? [])->map(fn ($id) => $samples->get($id))->filter()->map(fn (Sample $s) => self::sampleOption($s))->values(),
+                'buyer_ids' => $ids($g['buyer_ids'] ?? [])->all(),
+                'dispatch_date' => $g['dispatch_date'] ?? now()->toDateString(),
+                'notes' => $g['notes'] ?? null,
+            ])->all(),
             'buyers' => Buyer::orderBy('name')->get(['id', 'name', 'city']),
-            'selectedBuyers' => collect($request->old('buyer_ids', $request->input('buyer_ids', [])))->map(fn ($id) => (int) $id)->all(),
         ]);
     }
 
-    public function store(StoreDispatchRequest $request): RedirectResponse
+    public function store(StoreDispatchesRequest $request): RedirectResponse
     {
-        $created = $this->dispatches->dispatch(
-            $request->validated('sample_ids'),
-            $request->validated('buyer_ids'),
-            $request->validated('dispatch_date'),
-            $request->validated('notes'),
-            $request->user(),
-        );
+        $created = DB::transaction(fn () => collect($request->groups())->flatMap(fn (array $group) => $this->dispatches->dispatch(
+            $group['sample_ids'], $group['buyer_ids'], $group['dispatch_date'], $group['notes'], $request->user(),
+        )));
 
         if ($created->count() === 1) {
             return redirect()->route('dispatches.show', $created->first())

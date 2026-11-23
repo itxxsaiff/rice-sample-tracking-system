@@ -1,5 +1,6 @@
 import { uuid } from '../../db';
 import { enqueue } from '../../outbox';
+import { pdfButton, recordsReport, runExport } from '../reports';
 import { sampleLabel } from '../store';
 import { empty, fmtDate, h, matches, newestFirst, pageHeader, pendingBadge, qty, rate, savedToast, stageBadge } from '../util';
 
@@ -14,12 +15,14 @@ export function recordsList(ctx, params, query) {
     const tabs = Object.entries(TYPES).map(([k, l]) => `<a href="#/records?type=${k}" class="${k === type ? 'active' : ''}">${l}</a>`).join('');
 
     let rows;
+    let data;
     if (type === 'loadings') {
-        rows = ctx.loadings
+        const found = ctx.loadings
             .map((t) => ({ t, d: ctx.dispatch(t.dispatch_uuid) }))
             .filter(({ t, d }) => matches(`${t.truck_number} ${t.driver_name || ''} ${d?.dispatch_number || ''} ${ctx.buyer(d?.buyer_uuid)?.name || ''}`, q))
-            .sort((a, b) => String(b.t.loading_date).localeCompare(String(a.t.loading_date)))
-            .map(({ t, d }) => `<a href="#/loadings/${h(t.uuid)}" class="list-group-item list-group-item-action py-3">
+            .sort((a, b) => String(b.t.loading_date).localeCompare(String(a.t.loading_date)));
+        data = found.map(({ t }) => t);
+        rows = found.map(({ t, d }) => `<a href="#/loadings/${h(t.uuid)}" class="list-group-item list-group-item-action py-3">
                 <div class="d-flex justify-content-between gap-2"><span class="fw-semibold mono">${h(t.truck_number)} ${pendingBadge(t)}</span><span class="small text-muted">${fmtDate(t.loading_date)}</span></div>
                 <div class="small text-muted">${h(ctx.buyer(d?.buyer_uuid)?.name || '—')} · <span class="mono">${h(d?.dispatch_number || 'New')}</span> · ${h(qty(t.quantity, t.quantity_unit))}</div></a>`);
     } else {
@@ -29,11 +32,11 @@ export function recordsList(ctx, params, query) {
             rejections: ['rejection_date', (d) => d.status === 'rejected'],
             completed: ['loading_completed_at', (d) => d.loading_status === 'completed'],
         }[type];
-        rows = ctx.dispatches
+        data = ctx.dispatches
             .filter(keep)
             .filter((d) => { const s = ctx.sample(d.sample_uuid); return matches(`${d.dispatch_number} ${ctx.buyer(d.buyer_uuid)?.name} ${s?.sample_number} ${ctx.mill(s?.mill_uuid)?.name}`, q); })
-            .sort(newestFirst(field))
-            .map((d) => {
+            .sort(newestFirst(field));
+        rows = data.map((d) => {
                 const s = ctx.sample(d.sample_uuid);
                 const l = s ? sampleLabel(ctx, s) : { number: '—', variety: '', mill: '' };
                 return `<a href="#/dispatches/${h(d.uuid)}" class="list-group-item list-group-item-action py-3">
@@ -45,7 +48,7 @@ export function recordsList(ctx, params, query) {
 
     return {
         title: 'Records',
-        html: `${pageHeader('Records & History', `Last ${days} days and open orders on this device. The full history is available online.`)}
+        html: `${pageHeader('Records & History', `Last ${days} days and open orders on this device. The full history is available online.`, pdfButton)}
         <div class="card"><nav class="nav-tabs-pills" aria-label="Record type">${tabs}</nav>
             <form class="filter-bar" data-search><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="${type === 'loadings' ? 'Truck no., driver, dispatch, buyer' : 'Dispatch no., sample no., buyer, mill'}"></div></form>
             ${rows.length ? `<div class="list-group list-group-flush">${rows.join('')}</div>` : empty('journal-text', 'Nothing here on this device')}
@@ -55,6 +58,7 @@ export function recordsList(ctx, params, query) {
             const form = root.querySelector('[data-search]');
             form.addEventListener('submit', (e) => e.preventDefault());
             form.q.addEventListener('input', () => { history.replaceState(null, '', `#/records?type=${type}&q=${encodeURIComponent(form.q.value)}`); window.dispatchEvent(new Event('rst:rerender')); });
+            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => recordsReport(ctx, type, q, data)));
         },
     };
 }

@@ -26,11 +26,8 @@
 
     <div class="app-main">
         <header class="app-topbar">
-            @if ($back)
-                <a href="{{ $back }}" class="btn btn-light btn-icon d-lg-none" aria-label="Back"><i class="bi bi-chevron-left"></i></a>
-            @else
-                <button class="btn btn-light btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
-            @endif
+            {{-- The menu is always one tap away on phones, on every page. --}}
+            <button class="btn btn-light btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
             <h1 class="topbar-title flex-grow-1"><span class="d-lg-none">{{ $title ?? config('app.name') }}</span></h1>
             <form method="GET" action="{{ route('search') }}" class="d-none d-lg-block search-input" role="search" style="width:340px">
                 <i class="bi bi-search"></i>

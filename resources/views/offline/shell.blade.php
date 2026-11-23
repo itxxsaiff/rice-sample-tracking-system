@@ -42,7 +42,7 @@
 
     <div class="app-main">
         <header class="app-topbar">
-            <a href="#/" class="btn btn-light btn-icon d-lg-none" data-back aria-label="Back"><i class="bi bi-chevron-left"></i></a>
+            <button class="btn btn-light btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
             <h1 class="topbar-title flex-grow-1"><span class="d-lg-none" data-page-title>Rice Samples</span></h1>
             <div data-sync-indicator></div>
         </header>
@@ -60,6 +60,18 @@
         <a href="#/dispatches"><i class="bi bi-send"></i>Dispatch</a>
         <a href="#/loading"><i class="bi bi-truck"></i>Loading</a>
     </nav>
+
+    {{-- Mobile: full navigation drawer (same menu as online, filled by the offline app) --}}
+    <div class="offcanvas offcanvas-start offcanvas-nav" tabindex="-1" id="mobileNav" style="width: 290px">
+        <div class="offcanvas-header border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <img src="/images/logo.png" alt="Ukasha Pacific International" class="brand-logo" style="height:40px;width:auto">
+                <div><div class="fw-bold">Rice Samples</div><div class="small text-muted"><span data-user-name></span> · Working offline</div></div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-2"><nav data-offline-nav></nav></div>
+    </div>
 
     <div class="offcanvas offcanvas-bottom action-sheet" tabindex="-1" id="quickActions">
         <div class="offcanvas-header pb-2"><h5 class="offcanvas-title fw-semibold">Quick actions</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>

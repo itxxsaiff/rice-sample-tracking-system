@@ -75,10 +75,22 @@ async function build(db, form) {
             return { ops, open: ops.length === 1 ? `/samples/${ops[0].payload.uuid}` : '/samples' };
         }
         case 'dispatch.create': {
-            const samples = await Promise.all((f.sample_ids || []).map((s) => toUuid(db, 'samples', s)));
-            const buyers = await Promise.all((f.buyer_ids || []).map((b) => toUuid(db, 'buyers', b)));
-            const pairs = samples.flatMap((s) => buyers.map((b) => ({ uuid: uuid(), sample: s, buyer: b })));
-            return { op: { type, payload: { fields: { dispatch_date: f.dispatch_date, notes: nullable(f.notes) }, pairs }, summary: `${pairs.length} dispatch(es)` }, open: pairs.length === 1 ? `/dispatches/${pairs[0].uuid}` : '/dispatches' };
+            // One change per dispatch block on the form ("Add another dispatch").
+            // Older pages send a single dispatch with flat field names.
+            const keys = [...new Set([...new FormData(form).keys()].map((k) => k.match(/^dispatches\[([^\]]+)\]/)?.[1]).filter(Boolean))];
+            const groups = keys.length
+                ? keys.map((key) => (name) => f[`dispatches[${key}][${name}]`])
+                : [(name) => f[name]];
+            const ops = [];
+            for (const g of groups) {
+                const samples = await Promise.all((g('sample_ids') || []).map((s) => toUuid(db, 'samples', s)));
+                const buyers = await Promise.all((g('buyer_ids') || []).map((b) => toUuid(db, 'buyers', b)));
+                const pairs = samples.flatMap((s) => buyers.map((b) => ({ uuid: uuid(), sample: s, buyer: b })));
+                if (!pairs.length) continue;
+                ops.push({ type, payload: { fields: { dispatch_date: g('dispatch_date'), notes: nullable(g('notes')) }, pairs }, summary: `${pairs.length} dispatch(es)` });
+            }
+            const pairs = ops.flatMap((op) => op.payload.pairs);
+            return { ops, open: pairs.length === 1 ? `/dispatches/${pairs[0].uuid}` : '/dispatches' };
         }
         case 'dispatch.respond': {
             const fields = f.status === 'confirmed'
@@ -133,6 +145,10 @@ export function initFormCapture() {
         const db = openDb(user.id);
         const built = await build(db, form);
         if (!built) return;
+        if (built.ops && !built.ops.length) {
+            window.alert('Nothing to save yet: fill in the form first (for a dispatch, choose at least one sample and one buyer).');
+            return;
+        }
 
         for (const op of built.ops || [built.op]) await enqueue(db, op);
         if (built.complete) {

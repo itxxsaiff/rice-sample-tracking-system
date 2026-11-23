@@ -51,95 +51,162 @@ export function dispatchNew(ctx, params, query) {
     const preSamples = new Set([query.get('sample'), ...(query.get('samples') || '').split(',')].filter(Boolean));
     const preBuyers = new Set([query.get('buyer')].filter(Boolean));
     const samples = [...ctx.samples].sort(newestFirst('collection_date'));
+    let nextKey = 0;
 
-    const sampleItem = (s) => {
+    const sampleItem = (s, k, checked) => {
         const l = sampleLabel(ctx, s);
-        return `<label class="choice-item"><input class="form-check-input" type="checkbox" name="samples[]" value="${h(s.uuid)}" ${preSamples.has(s.uuid) ? 'checked' : ''}>
+        return `<label class="choice-item"><input class="form-check-input" type="checkbox" name="g${k}_samples[]" value="${h(s.uuid)}" ${checked ? 'checked' : ''}>
             <span class="min-w-0"><span class="d-block fw-medium text-truncate"><span class="mono">${h(l.number)}</span> · ${h(l.variety)} ${pendingBadge(s)}</span><span class="small text-muted">${h(l.mill)}, ${h(l.city)} · ${fmtDate(s.collection_date)}</span></span></label>`;
     };
-    const buyerItem = (b, checked = false) => `<label class="choice-item"><input class="form-check-input" type="checkbox" name="buyers[]" value="${h(b.uuid)}" ${checked || preBuyers.has(b.uuid) ? 'checked' : ''}>
+    const buyerItem = (b, k, checked = false) => `<label class="choice-item"><input class="form-check-input" type="checkbox" name="g${k}_buyers[]" value="${h(b.uuid)}" ${checked ? 'checked' : ''}>
         <span class="min-w-0"><span class="d-block fw-medium text-truncate">${h(b.name)} ${pendingBadge(b)}</span><span class="small text-muted">${h(b.city)}</span></span></label>`;
+
+    // One dispatch block: its own samples, buyers, date and notes.
+    const groupHtml = (k, { first = false, date = today() } = {}) => `<section class="dispatch-group" data-group="${k}">
+        <div class="sample-row-head"><div class="sample-row-num"><span data-group-number>1</span> Dispatch</div>
+            <button type="button" class="btn btn-sm btn-light text-danger" data-remove-group><i class="bi bi-trash"></i> Remove</button></div>
+        <div class="row g-3">
+            <div class="col-lg-6"><div class="dispatch-panel h-100"><h3 class="dispatch-panel-title"><i class="bi bi-basket text-primary"></i> Samples <span class="badge rounded-pill text-bg-light border" data-count="samples">0</span></h3>
+                <div class="search-input mb-2"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Filter samples" data-filter="samples" aria-label="Filter samples"></div>
+                <div class="choice-list" data-list="samples">${samples.map((s) => sampleItem(s, k, first && preSamples.has(s.uuid))).join('') || '<div class="picker-empty">No samples on this device.</div>'}</div>
+                <div class="invalid-feedback d-block" data-error-for="g${k}_samples"></div></div></div>
+            <div class="col-lg-6"><div class="dispatch-panel h-100"><div class="d-flex justify-content-between align-items-center gap-2"><h3 class="dispatch-panel-title"><i class="bi bi-people text-primary"></i> Buyers <span class="badge rounded-pill text-bg-light border" data-count="buyers">0</span></h3>
+                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-new-buyer><i class="bi bi-plus-circle"></i> New buyer</button></div>
+                <div class="search-input mb-2"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Filter buyers" data-filter="buyers" aria-label="Filter buyers"></div>
+                <div class="choice-list" data-list="buyers">${ctx.buyers.map((b) => buyerItem(b, k, first && preBuyers.has(b.uuid))).join('')}</div>
+                <div class="invalid-feedback d-block" data-error-for="g${k}_buyers"></div></div></div>
+        </div>
+        <div class="row mt-3">
+            ${input(`g${k}_dispatch_date`, 'Dispatch date', { type: 'date', value: date, required: true, cls: 'col-md-4 mb-3', attrs: `max="${today()}"` })}
+            ${input(`g${k}_notes`, 'Notes', { cls: 'col-md-8 mb-3', placeholder: 'Courier, tracking no., who carried it…' })}
+        </div>
+        <div class="alert alert-secondary mb-0 d-flex align-items-center gap-2" data-summary><i class="bi bi-info-circle"></i><span>Select at least one sample and one buyer</span></div>
+    </section>`;
 
     return {
         title: 'Dispatch Samples',
         back: '#/dispatches',
         isForm: true,
         actionBar: true,
-        html: `${pageHeader('Dispatch Samples', 'A separate dispatch is recorded for every sample–buyer pair.')}
-        <form novalidate data-form><div class="row g-4">
-            <div class="col-lg-6"><div class="card h-100"><div class="card-header"><h2><i class="bi bi-basket text-primary me-2"></i>Samples <span class="badge rounded-pill text-bg-light border ms-1" data-choice-count="samples">0</span></h2></div>
-                <div class="card-body"><div class="search-input mb-2"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Filter samples" data-filter="#sampleList" aria-label="Filter samples"></div>
-                <div id="sampleList" class="choice-list" data-choice-group="samples">${samples.map(sampleItem).join('') || '<div class="picker-empty">No samples on this device.</div>'}</div>
-                <div class="invalid-feedback d-block" data-error-for="samples"></div></div></div></div>
-            <div class="col-lg-6"><div class="card h-100"><div class="card-header justify-content-between"><h2><i class="bi bi-people text-primary me-2"></i>Buyers <span class="badge rounded-pill text-bg-light border ms-1" data-choice-count="buyers">0</span></h2>
-                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-new-buyer><i class="bi bi-plus-circle"></i> New buyer</button></div>
-                <div class="card-body"><div class="search-input mb-2"><i class="bi bi-search"></i><input type="search" class="form-control" placeholder="Filter buyers" data-filter="#buyerList" aria-label="Filter buyers"></div>
-                <div id="buyerList" class="choice-list" data-choice-group="buyers">${ctx.buyers.map((b) => buyerItem(b)).join('')}</div>
-                <div class="invalid-feedback d-block" data-error-for="buyers"></div></div></div></div>
-            <div class="col-12"><div class="card"><div class="card-body"><div class="row">
-                ${input('dispatch_date', 'Dispatch date', { type: 'date', value: today(), required: true, cls: 'col-md-4 mb-3', attrs: `max="${today()}"` })}
-                ${input('notes', 'Notes', { cls: 'col-md-8 mb-3', placeholder: 'Courier, tracking no., who carried it…' })}
-            </div><div class="alert alert-secondary mb-0 d-flex align-items-center gap-2" data-summary><i class="bi bi-info-circle"></i><span>Select at least one sample and one buyer</span></div></div></div></div>
-        </div>
-        <div class="action-bar action-bar-float"><a href="#/dispatches" class="btn btn-light">Cancel</a><button class="btn btn-primary"><i class="bi bi-send"></i> Record dispatch</button></div></form>`,
+        html: `${pageHeader('Dispatch Samples', 'Use “Add another dispatch” to send different samples to different buyers in one go. Every sample–buyer pair is recorded separately.')}
+        <form novalidate data-form><div class="card mb-4"><div class="card-body">
+            <div data-groups>${groupHtml(nextKey++, { first: true })}</div>
+            <button type="button" class="btn btn-outline-primary w-100 mt-3 py-3" data-add-group style="border-style:dashed"><i class="bi bi-plus-circle"></i> Add another dispatch</button>
+        </div></div>
+        <div class="action-bar action-bar-float"><a href="#/dispatches" class="btn btn-light">Cancel</a><button class="btn btn-primary"><i class="bi bi-send"></i> <span data-save-label>Record dispatch</span></button></div></form>`,
         mount(root) {
             const form = root.querySelector('[data-form]');
+            const container = form.querySelector('[data-groups]');
+            const groups = () => [...container.querySelectorAll('[data-group]')];
+            const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+            const picked = (group, list) => [...group.querySelectorAll(`[data-list="${list}"] input:checked`)].map((i) => i.value);
+
             const refresh = () => {
-                const s = form.querySelectorAll('[name="samples[]"]:checked').length;
-                const b = form.querySelectorAll('[name="buyers[]"]:checked').length;
-                form.querySelectorAll('.choice-item').forEach((el) => el.classList.toggle('checked', el.querySelector('input').checked));
-                form.querySelector('[data-choice-count="samples"]').textContent = s;
-                form.querySelector('[data-choice-count="buyers"]').textContent = b;
-                const summary = form.querySelector('[data-summary]');
-                summary.querySelector('span').textContent = s && b ? `${s} sample${s > 1 ? 's' : ''} × ${b} buyer${b > 1 ? 's' : ''} = ${s * b} dispatch record${s * b > 1 ? 's' : ''}` : 'Select at least one sample and one buyer';
-                summary.classList.toggle('alert-success', s * b > 0);
-                summary.classList.toggle('alert-secondary', !(s * b));
+                let total = 0;
+                groups().forEach((group, i) => {
+                    group.querySelector('[data-group-number]').textContent = i + 1;
+                    group.querySelector('[data-remove-group]').classList.toggle('invisible', groups().length === 1);
+                    group.querySelectorAll('.choice-item').forEach((el) => el.classList.toggle('checked', el.querySelector('input').checked));
+                    const s = picked(group, 'samples').length;
+                    const b = picked(group, 'buyers').length;
+                    total += s * b;
+                    group.querySelector('[data-count="samples"]').textContent = s;
+                    group.querySelector('[data-count="buyers"]').textContent = b;
+                    const summary = group.querySelector('[data-summary]');
+                    summary.querySelector('span').textContent = s && b ? `${plural(s, 'sample')} × ${plural(b, 'buyer')} = ${plural(s * b, 'dispatch record')}` : 'Select at least one sample and one buyer';
+                    summary.classList.toggle('alert-success', s * b > 0);
+                    summary.classList.toggle('alert-secondary', !(s * b));
+                });
+                form.querySelector('[data-save-label]').textContent = total > 1 ? `Record ${total} dispatches` : 'Record dispatch';
             };
+
             form.addEventListener('change', refresh);
-            form.querySelectorAll('[data-filter]').forEach((inp) => inp.addEventListener('input', () => {
-                form.querySelectorAll(`${inp.dataset.filter} .choice-item`).forEach((el) => el.classList.toggle('d-none', !matches(el.textContent, inp.value)));
-            }));
-            form.querySelector('[data-new-buyer]').addEventListener('click', async () => {
-                const item = await quickAddDialog('buyer', (data) => saveDirectory(ctx, 'buyer', data));
-                if (!item) return;
-                const wrap = document.createElement('div');
-                wrap.innerHTML = buyerItem({ uuid: item.uuid, name: item.label, city: item.sub, _pending: true }, true);
-                form.querySelector('#buyerList').prepend(wrap.firstElementChild);
-                savedToast('Buyer');
-                refresh();
+            form.addEventListener('input', (e) => {
+                const filter = e.target.closest('[data-filter]');
+                if (!filter) return;
+                filter.closest('[data-group]').querySelectorAll(`[data-list="${filter.dataset.filter}"] .choice-item`)
+                    .forEach((el) => el.classList.toggle('d-none', !matches(el.textContent, filter.value)));
+            });
+            form.addEventListener('click', async (e) => {
+                if (e.target.closest('[data-add-group]')) {
+                    const date = groups().at(-1)?.querySelector('[type=date]')?.value || today();
+                    const wrap = document.createElement('div');
+                    wrap.innerHTML = groupHtml(nextKey++, { date });
+                    const group = wrap.firstElementChild;
+                    container.appendChild(group);
+                    refresh();
+                    group.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    return;
+                }
+                const remove = e.target.closest('[data-remove-group]');
+                if (remove && groups().length > 1) { remove.closest('[data-group]').remove(); refresh(); return; }
+
+                const newBuyer = e.target.closest('[data-new-buyer]');
+                if (newBuyer) {
+                    const here = newBuyer.closest('[data-group]');
+                    const item = await quickAddDialog('buyer', (data) => saveDirectory(ctx, 'buyer', data));
+                    if (!item) return;
+                    // Add to every dispatch on the form, ticked where it was added.
+                    groups().forEach((group) => {
+                        const wrap = document.createElement('div');
+                        wrap.innerHTML = buyerItem({ uuid: item.uuid, name: item.label, city: item.sub, _pending: true }, group.dataset.group, group === here);
+                        group.querySelector('[data-list="buyers"]').prepend(wrap.firstElementChild);
+                    });
+                    // Dispatches added below this one list the new buyer too.
+                    const buyer = { uuid: item.uuid, name: item.label, city: item.sub, _pending: true };
+                    ctx.buyers.unshift(buyer);
+                    ctx.buyersBy.set(buyer.uuid, buyer);
+                    savedToast('Buyer');
+                    refresh();
+                }
             });
             refresh();
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const data = values(form);
-                const sampleUuids = data.samples || [];
-                const buyerUuids = data.buyers || [];
                 const errors = {};
-                if (!sampleUuids.length) errors.samples = 'Choose at least one sample to send.';
-                if (!buyerUuids.length) errors.buyers = 'Choose at least one buyer.';
-                if (!data.dispatch_date) errors.dispatch_date = 'The dispatch date is required.';
-                else if (data.dispatch_date > today()) errors.dispatch_date = 'The dispatch date cannot be in the future.';
-                const early = sampleUuids.map((u) => ctx.sample(u)).filter((s) => s && s.collection_date > data.dispatch_date);
-                if (early.length) errors.dispatch_date = `The dispatch date is before the collection date of ${early.map((s) => s.sample_number || 'a new sample').join(', ')}.`;
-                const dupes = [];
-                for (const su of sampleUuids) for (const bu of buyerUuids) {
-                    if (ctx.dispatches.some((d) => d.sample_uuid === su && d.buyer_uuid === bu && isActiveDispatch(d))) {
-                        dupes.push(`${ctx.sample(su)?.sample_number || 'new sample'} → ${ctx.buyer(bu)?.name || 'buyer'}`);
+                const seen = new Set();
+                const batches = [];
+                for (const group of groups()) {
+                    const k = group.dataset.group;
+                    const sampleUuids = picked(group, 'samples');
+                    const buyerUuids = picked(group, 'buyers');
+                    const date = group.querySelector(`[name="g${k}_dispatch_date"]`).value;
+                    const notes = group.querySelector(`[name="g${k}_notes"]`).value.trim();
+
+                    if (!sampleUuids.length) errors[`g${k}_samples`] = 'Choose at least one sample to send.';
+                    if (!buyerUuids.length) errors[`g${k}_buyers`] = 'Choose at least one buyer.';
+                    if (!date) errors[`g${k}_dispatch_date`] = 'The dispatch date is required.';
+                    else if (date > today()) errors[`g${k}_dispatch_date`] = 'The dispatch date cannot be in the future.';
+                    const early = sampleUuids.map((u) => ctx.sample(u)).filter((s) => s && date && s.collection_date > date);
+                    if (early.length) errors[`g${k}_dispatch_date`] = `The dispatch date is before the collection date of ${early.map((s) => s.sample_number || 'a new sample').join(', ')}.`;
+
+                    const dupes = [];
+                    const repeated = [];
+                    const pairs = [];
+                    for (const su of sampleUuids) for (const bu of buyerUuids) {
+                        const name = `${ctx.sample(su)?.sample_number || 'new sample'} → ${ctx.buyer(bu)?.name || 'buyer'}`;
+                        if (ctx.dispatches.some((d) => d.sample_uuid === su && d.buyer_uuid === bu && isActiveDispatch(d))) dupes.push(name);
+                        if (seen.has(`${su}:${bu}`)) repeated.push(name);
+                        seen.add(`${su}:${bu}`);
+                        pairs.push({ uuid: uuid(), sample: su, buyer: bu });
                     }
+                    if (dupes.length) errors[`g${k}_buyers`] = `Already sent and awaiting a response or confirmed: ${dupes.join(', ')}.`;
+                    else if (repeated.length) errors[`g${k}_buyers`] = `An earlier dispatch on this form already sends ${repeated.join(', ')}.`;
+                    batches.push({ pairs, buyerUuids, fields: { dispatch_date: date, notes: notes || null } });
                 }
-                if (dupes.length) errors.buyers = `Already sent and awaiting a response or confirmed: ${dupes.join(', ')}.`;
                 if (showErrors(form, errors)) return;
 
-                const pairs = [];
-                for (const su of sampleUuids) for (const bu of buyerUuids) pairs.push({ uuid: uuid(), sample: su, buyer: bu });
-                await enqueue(ctx.db, {
-                    type: 'dispatch.create',
-                    payload: { fields: { dispatch_date: data.dispatch_date, notes: data.notes || null }, pairs },
-                    summary: `${pairs.length} dispatch${pairs.length > 1 ? 'es' : ''} to ${buyerUuids.map((b) => ctx.buyer(b)?.name).join(', ')}`,
-                });
-                savedToast(pairs.length > 1 ? `${pairs.length} dispatches` : 'Dispatch');
-                go(pairs.length === 1 ? `#/dispatches/${pairs[0].uuid}` : '#/dispatches?status=pending');
+                for (const batch of batches) {
+                    await enqueue(ctx.db, {
+                        type: 'dispatch.create',
+                        payload: { fields: batch.fields, pairs: batch.pairs },
+                        summary: `${batch.pairs.length} dispatch${batch.pairs.length > 1 ? 'es' : ''} to ${batch.buyerUuids.map((b) => ctx.buyer(b)?.name).join(', ')}`,
+                    });
+                }
+                const all = batches.flatMap((b) => b.pairs);
+                savedToast(all.length > 1 ? `${all.length} dispatches` : 'Dispatch');
+                go(all.length === 1 ? `#/dispatches/${all[0].uuid}` : '#/dispatches?status=pending');
             });
         },
     };
