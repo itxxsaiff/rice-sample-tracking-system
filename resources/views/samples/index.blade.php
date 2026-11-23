@@ -9,26 +9,25 @@
     <div class="card">
         <form method="GET" class="filter-bar" data-auto-submit>
             <div class="row g-2">
-                <div class="col-12 col-lg-12 col-xl-4">
+                <div class="col-12 col-lg-6">
                     <div class="search-input"><i class="bi bi-search"></i>
                         <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="Sample no., mill, variety">
                     </div>
                 </div>
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-lg-3">
                     <select name="variety_id" class="form-select" aria-label="Variety">
                         <option value="">All varieties</option>
                         @foreach ($varieties as $id => $name)<option value="{{ $id }}" @selected(($filters['variety_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-lg-3">
                     <select name="city" class="form-select" aria-label="City">
                         <option value="">All cities</option>
                         @foreach ($cities as $city)<option value="{{ $city }}" @selected(($filters['city'] ?? '') === $city)>{{ $city }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-6 col-lg-2"><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control" aria-label="From date" title="From"></div>
-                <div class="col-6 col-lg-2"><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control" aria-label="To date" title="To"></div>
-                <div class="col-12 col-lg-2">
+                <x-date-range :from="$filters['from'] ?? null" :to="$filters['to'] ?? null" label="Collection date" class="col-6 col-lg-3" />
+                <div class="col-12 col-lg-6">
                     <select name="sent" class="form-select" aria-label="Dispatch status">
                         <option value="">Sent &amp; not sent</option>
                         <option value="no" @selected(($filters['sent'] ?? '') === 'no')>Not sent yet</option>

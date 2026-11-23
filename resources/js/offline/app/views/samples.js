@@ -3,7 +3,7 @@ import { enqueue } from '../../outbox';
 import { input, mountPicker, picker, quickAddDialog, select, setPicker, showErrors, textarea, values } from '../fields';
 import { pdfButton, runExport, samplesReport } from '../reports';
 import { sampleLabel } from '../store';
-import { cfg, detail, empty, fmtDate, go, h, matches, newestFirst, pageHeader, pendingBadge, qty, savedToast, stageBadge, today } from '../util';
+import { cfg, dateRange, detail, empty, fmtDate, go, h, inRange, matches, newestFirst, pageHeader, pendingBadge, qty, savedToast, stageBadge, today } from '../util';
 import { saveDirectory } from './directory';
 
 /** Samples — offline. */
@@ -11,8 +11,11 @@ import { saveDirectory } from './directory';
 export function samplesList(ctx, params, query) {
     const q = query.get('q') || '';
     const variety = query.get('variety') || '';
+    const from = query.get('from') || '';
+    const to = query.get('to') || '';
     const rows = ctx.samples
         .filter((s) => !variety || s.variety_uuid === variety)
+        .filter((s) => inRange(s.collection_date, from, to))
         .filter((s) => { const l = sampleLabel(ctx, s); return matches(`${l.number} ${l.mill} ${l.city} ${l.variety}`, q); })
         .sort(newestFirst('collection_date'));
 
@@ -21,19 +24,22 @@ export function samplesList(ctx, params, query) {
         html: `${pageHeader('Samples', `Samples on this device (last ${ctx.historyDays || 10} days and any still in use).`, `${pdfButton}<a href="#/samples/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Add sample</a>`)}
         <div class="card">
             <form class="filter-bar" data-search><div class="row g-2">
-                <div class="col-12 col-lg-8"><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="Sample no., mill, variety"></div></div>
-                <div class="col-12 col-lg-4">${select('variety', '', ctx.varietyOptions(variety), { value: variety, placeholder: 'All varieties', cls: '' })}</div>
+                <div class="col-12 col-lg-6"><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="Sample no., mill, variety"></div></div>
+                <div class="col-12 col-lg-6">${select('variety', '', ctx.varietyOptions(variety), { value: variety, placeholder: 'All varieties', cls: '' })}</div>
+                ${dateRange(from, to, 'Collection date')}
             </div></form>
             ${rows.length ? `<div class="list-group list-group-flush">${rows.map((s) => sampleItem(ctx, s)).join('')}</div>` : empty('basket', 'No samples on this device', 'Record samples as you collect them at mills.', '<a href="#/samples/new" class="btn btn-primary">Add sample</a>')}
         </div>`,
         keepFocus: '[name=q]',
         mount(root) {
             const form = root.querySelector('[data-search]');
-            const update = () => { history.replaceState(null, '', `#/samples?q=${encodeURIComponent(form.q.value)}&variety=${form.variety.value}`); window.dispatchEvent(new Event('rst:rerender')); };
+            const update = () => { history.replaceState(null, '', `#/samples?q=${encodeURIComponent(form.q.value)}&variety=${form.variety.value}&from=${form.from.value}&to=${form.to.value}`); window.dispatchEvent(new Event('rst:rerender')); };
             form.addEventListener('submit', (e) => e.preventDefault());
             form.q.addEventListener('input', update);
             form.variety.addEventListener('change', update);
-            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => samplesReport(ctx, rows, { q, variety })));
+            form.from.addEventListener('change', update);
+            form.to.addEventListener('change', update);
+            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => samplesReport(ctx, rows, { q, variety, from, to })));
         },
     };
 }

@@ -12,7 +12,6 @@ use App\Models\SampleDispatch;
 use App\Support\PdfReport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -74,7 +73,7 @@ class RecordsController extends Controller
             'total' => $total,
             'truncated' => $total > $records->count(),
             'criteria' => $this->criteria($type, $filters),
-            'summary' => $type === 'loadings' ? $this->loadingSummary($records) : $this->dispatchSummary($records),
+            'summary' => $type === 'loadings' ? $this->loadingSummary($records) : self::dispatchSummary($records),
         ], self::PDF_TITLES[$type], 'records-'.$type);
     }
 
@@ -97,24 +96,17 @@ class RecordsController extends Controller
     /** What the printed list covers, in words. */
     private function criteria(string $type, array $filters): array
     {
-        $date = fn (string $d) => rescue(fn () => Carbon::parse($d)->format('d M Y'), $d, false);
-
         return array_filter([
             'List' => self::TYPES[$type],
             'Search' => $filters['q'] ?? null,
             'Mill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id'])?->label() : null,
             'Buyer' => isset($filters['buyer_id']) ? Buyer::find($filters['buyer_id'])?->name : null,
             'Variety' => isset($filters['variety_id']) ? RiceVariety::find($filters['variety_id'])?->name : null,
-            $this->dateLabel($type) => match (true) {
-                isset($filters['from'], $filters['to']) => $date($filters['from']).' – '.$date($filters['to']),
-                isset($filters['from']) => 'from '.$date($filters['from']),
-                isset($filters['to']) => 'up to '.$date($filters['to']),
-                default => 'All dates',
-            },
+            $this->dateLabel($type) => PdfReport::period($filters['from'] ?? null, $filters['to'] ?? null),
         ]);
     }
 
-    private function dispatchSummary(Collection $dispatches): array
+    public static function dispatchSummary(Collection $dispatches): array
     {
         $confirmed = $dispatches->filter->isConfirmed();
 

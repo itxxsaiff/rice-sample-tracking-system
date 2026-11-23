@@ -1635,3 +1635,17 @@ td .mono {
     gap: .45rem;
     margin-bottom: .75rem;
 }
+
+/* "From / To" date filters on list pages. */
+.date-filter .input-group-text {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted);
+    padding-inline: .6rem;
+    min-width: 3.1rem;
+    justify-content: center;
+}
+
+.date-filter .form-control {
+    min-width: 0;
+}

@@ -100,3 +100,18 @@ export function newestFirst(field) {
 export function matches(text, query) {
     return String(text || '').toLowerCase().includes(String(query || '').trim().toLowerCase());
 }
+
+/** Is a date (YYYY-MM-DD or a full timestamp) inside an optional from/to range? */
+export function inRange(value, from, to) {
+    if (!from && !to) return true;
+    if (!value) return false;
+    const day = String(value).slice(0, 10);
+    return (!from || day >= from) && (!to || day <= to);
+}
+
+/** "From / To" date filter, same look as the online x-date-range component. */
+export function dateRange(from, to, label = 'Date', cls = 'col-6 col-lg-3') {
+    const box = (name, text, value) => `<div class="${cls}"><div class="input-group date-filter"><span class="input-group-text">${text}</span>
+        <input type="date" name="${name}" value="${h(value || '')}" max="${today()}" class="form-control" aria-label="${h(label)} ${name}" title="${h(label)} ${name}"></div></div>`;
+    return box('from', 'From', from) + box('to', 'To', to);
+}

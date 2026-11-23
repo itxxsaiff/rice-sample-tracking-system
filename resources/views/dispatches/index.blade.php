@@ -1,6 +1,7 @@
 <x-layouts.app title="Dispatches">
     <x-page-header title="Sample Dispatches" subtitle="Samples sent to buyers and their responses. Each buyer's answer is tracked separately.">
         <x-slot:actions>
+            <a href="{{ route('dispatches.pdf', array_filter($filters, 'is_string')) }}" class="btn btn-light" data-pdf-export><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
             <a href="{{ route('dispatches.create') }}" class="btn btn-primary"><i class="bi bi-send me-1"></i> Dispatch samples</a>
         </x-slot:actions>
     </x-page-header>
@@ -18,25 +19,24 @@
         <form method="GET" class="filter-bar" data-auto-submit>
             @if (! empty($filters['status']))<input type="hidden" name="status" value="{{ $filters['status'] }}">@endif
             <div class="row g-2">
-                <div class="col-12 col-lg-4">
+                <div class="col-12 col-lg-6">
                     <div class="search-input"><i class="bi bi-search"></i>
                         <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="Dispatch no., sample no., buyer, mill">
                     </div>
                 </div>
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-lg-3">
                     <select name="buyer_id" class="form-select" aria-label="Buyer">
                         <option value="">All buyers</option>
                         @foreach ($buyers as $id => $name)<option value="{{ $id }}" @selected(($filters['buyer_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-lg-3">
                     <select name="variety_id" class="form-select" aria-label="Variety">
                         <option value="">All varieties</option>
                         @foreach ($varieties as $id => $name)<option value="{{ $id }}" @selected(($filters['variety_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-6 col-lg-2"><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control" aria-label="From date"></div>
-                <div class="col-6 col-lg-2"><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control" aria-label="To date"></div>
+                <x-date-range :from="$filters['from'] ?? null" :to="$filters['to'] ?? null" label="Dispatch date" class="col-6 col-lg-3" />
                 @if ($filterMill)
                     <input type="hidden" name="mill_id" value="{{ $filterMill->id }}">
                     <div class="col-12"><span class="badge text-bg-light border p-2">Mill: {{ $filterMill->name }} <a href="{{ request()->fullUrlWithoutQuery(['mill_id', 'page']) }}" aria-label="Clear mill filter"><i class="bi bi-x"></i></a></span></div>

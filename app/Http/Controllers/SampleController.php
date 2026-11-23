@@ -12,7 +12,6 @@ use App\Support\PdfReport;
 use App\Support\PhotoStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -56,7 +55,6 @@ class SampleController extends Controller
             ->latest('collection_date')->latest('id')
             ->limit(PdfReport::MAX_ROWS)->get();
 
-        $date = fn (string $d) => rescue(fn () => Carbon::parse($d)->format('d M Y'), $d, false);
         $sent = $samples->filter(fn (Sample $s) => $s->dispatches->isNotEmpty());
 
         return PdfReport::download('pdf.samples', [
@@ -68,12 +66,7 @@ class SampleController extends Controller
                 'Mill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id'])?->label() : null,
                 'Variety' => isset($filters['variety_id']) ? RiceVariety::find($filters['variety_id'])?->name : null,
                 'City' => $filters['city'] ?? null,
-                'Collected' => match (true) {
-                    isset($filters['from'], $filters['to']) => $date($filters['from']).' – '.$date($filters['to']),
-                    isset($filters['from']) => 'from '.$date($filters['from']),
-                    isset($filters['to']) => 'up to '.$date($filters['to']),
-                    default => 'All dates',
-                },
+                'Collected' => PdfReport::period($filters['from'] ?? null, $filters['to'] ?? null),
                 'Showing' => ['no' => 'Not sent yet', 'yes' => 'Sent to buyers'][$filters['sent'] ?? ''] ?? null,
             ]),
             'summary' => [

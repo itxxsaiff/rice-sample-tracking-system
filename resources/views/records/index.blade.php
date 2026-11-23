@@ -14,28 +14,27 @@
         <form method="GET" class="filter-bar" data-auto-submit>
             <input type="hidden" name="type" value="{{ $type }}">
             <div class="row g-2">
-                <div class="col-12 col-xl-3">
+                <div class="col-12 col-lg-4">
                     <div class="search-input"><i class="bi bi-search"></i>
                         <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="{{ $type === 'loadings' ? 'Truck no., driver, dispatch, buyer' : 'Dispatch no., sample no., buyer, mill' }}">
                     </div>
                 </div>
-                <div class="col-6 col-md-4 col-xl-2">
+                <div class="col-6 col-lg-3">
                     <select name="mill_id" class="form-select" aria-label="Mill"><option value="">All mills</option>
                         @foreach ($mills as $id => $name)<option value="{{ $id }}" @selected(($filters['mill_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-6 col-md-4 col-xl-2">
+                <div class="col-6 col-lg-3">
                     <select name="buyer_id" class="form-select" aria-label="Buyer"><option value="">All buyers</option>
                         @foreach ($buyers as $id => $name)<option value="{{ $id }}" @selected(($filters['buyer_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-12 col-md-4 col-xl-1">
+                <div class="col-12 col-lg-2">
                     <select name="variety_id" class="form-select" aria-label="Variety"><option value="">Variety</option>
                         @foreach ($varieties as $id => $name)<option value="{{ $id }}" @selected(($filters['variety_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <div class="col-6 col-xl-2"><input type="date" name="from" value="{{ $filters['from'] ?? '' }}" class="form-control" aria-label="{{ $dateLabel }} from" title="{{ $dateLabel }} from"></div>
-                <div class="col-6 col-xl-2"><input type="date" name="to" value="{{ $filters['to'] ?? '' }}" class="form-control" aria-label="{{ $dateLabel }} to" title="{{ $dateLabel }} to"></div>
+                <x-date-range :from="$filters['from'] ?? null" :to="$filters['to'] ?? null" :label="$dateLabel" class="col-6 col-lg-3" />
             </div>
             <div class="mt-2 small text-muted">
                 {{ number_format($records->total()) }} record(s) · dates filter by <strong>{{ strtolower($dateLabel) }}</strong>

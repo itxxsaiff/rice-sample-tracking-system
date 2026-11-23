@@ -3,7 +3,8 @@ import { enqueue, enqueuePhotos } from '../../outbox';
 import { enableImages, input, photoInput, photosFrom, quickAddDialog, select, showErrors, textarea, values } from '../fields';
 import { Modal } from 'bootstrap';
 import { isActiveDispatch, loadContext, loadingProgress, sampleLabel } from '../store';
-import { badge, cfg, detail, empty, fmtDate, go, h, matches, newestFirst, pageHeader, pendingBadge, qty, rate, savedToast, stageBadge, today } from '../util';
+import { dispatchesReport, pdfButton, runExport } from '../reports';
+import { badge, cfg, dateRange, detail, empty, fmtDate, go, h, inRange, matches, newestFirst, pageHeader, pendingBadge, qty, rate, savedToast, stageBadge, today } from '../util';
 import { saveDirectory } from './directory';
 
 /** Dispatches, buyer responses and loading — offline. */
@@ -22,27 +23,37 @@ function dispatchRow(ctx, d, { showBuyer = true } = {}) {
 export function dispatchList(ctx, params, query) {
     const status = query.get('status') || '';
     const q = query.get('q') || '';
+    const from = query.get('from') || '';
+    const to = query.get('to') || '';
     const filtered = ctx.dispatches.filter((d) => {
         const s = ctx.sample(d.sample_uuid);
-        return matches(`${d.dispatch_number} ${ctx.buyer(d.buyer_uuid)?.name} ${s?.sample_number} ${ctx.mill(s?.mill_uuid)?.name}`, q);
+        return inRange(d.dispatch_date, from, to) && matches(`${d.dispatch_number} ${ctx.buyer(d.buyer_uuid)?.name} ${s?.sample_number} ${ctx.mill(s?.mill_uuid)?.name}`, q);
     });
     const rows = filtered.filter((d) => !status || d.status === status).sort(newestFirst('dispatch_date'));
     const count = (st) => filtered.filter((d) => !st || d.status === st).length;
-    const tab = (st, label) => `<a href="#/dispatches?status=${st}&q=${encodeURIComponent(q)}" class="${status === st ? 'active' : ''}">${label}<span class="count">${count(st)}</span></a>`;
+    const link = (st) => `#/dispatches?status=${st}&q=${encodeURIComponent(q)}&from=${from}&to=${to}`;
+    const tab = (st, label) => `<a href="${link(st)}" class="${status === st ? 'active' : ''}">${label}<span class="count">${count(st)}</span></a>`;
 
     return {
         title: 'Dispatches',
-        html: `${pageHeader('Sample Dispatches', 'Each buyer\'s answer is tracked separately.', '<a href="#/dispatches/new" class="btn btn-primary"><i class="bi bi-send me-1"></i> Dispatch samples</a>')}
+        html: `${pageHeader('Sample Dispatches', 'Each buyer\'s answer is tracked separately.', `${pdfButton}<a href="#/dispatches/new" class="btn btn-primary"><i class="bi bi-send me-1"></i> Dispatch samples</a>`)}
         <div class="card">
             <nav class="nav-tabs-pills">${tab('', 'All')}${tab('pending', 'Pending')}${tab('confirmed', 'Confirmed')}${tab('rejected', 'Rejected')}</nav>
-            <form class="filter-bar" data-search><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="Dispatch no., sample no., buyer, mill"></div></form>
+            <form class="filter-bar" data-search><div class="row g-2">
+                <div class="col-12 col-lg-6"><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="Dispatch no., sample no., buyer, mill"></div></div>
+                ${dateRange(from, to, 'Dispatch date')}
+            </div></form>
             ${rows.length ? `<div class="list-group list-group-flush">${rows.map((d) => dispatchRow(ctx, d)).join('')}</div>` : empty('send', 'No dispatches here', 'Send samples to one or more buyers.', '<a href="#/dispatches/new" class="btn btn-primary">Dispatch samples</a>')}
         </div>`,
         keepFocus: '[name=q]',
         mount(root) {
             const form = root.querySelector('[data-search]');
+            const update = () => { history.replaceState(null, '', `#/dispatches?status=${status}&q=${encodeURIComponent(form.q.value)}&from=${form.from.value}&to=${form.to.value}`); window.dispatchEvent(new Event('rst:rerender')); };
             form.addEventListener('submit', (e) => e.preventDefault());
-            form.q.addEventListener('input', () => { history.replaceState(null, '', `#/dispatches?status=${status}&q=${encodeURIComponent(form.q.value)}`); window.dispatchEvent(new Event('rst:rerender')); });
+            form.q.addEventListener('input', update);
+            form.from.addEventListener('change', update);
+            form.to.addEventListener('change', update);
+            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => dispatchesReport(ctx, rows, { status, q, from, to })));
         },
     };
 }

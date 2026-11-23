@@ -51,6 +51,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('samples', SampleController::class);
     Route::redirect('bundles/{any?}', '/samples')->where('any', '.*'); // bundles were removed; old links land on Samples
 
+    Route::get('dispatches/pdf', [SampleDispatchController::class, 'pdf'])->name('dispatches.pdf');
     Route::get('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respondForm'])->name('dispatches.respond');
     Route::put('dispatches/{dispatch}/respond', [SampleDispatchController::class, 'respond'])->name('dispatches.respond.update');
     Route::patch('dispatches/{dispatch}/reopen', [SampleDispatchController::class, 'reopen'])->name('dispatches.reopen');

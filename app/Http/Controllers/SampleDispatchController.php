@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DispatchStatus;
 use App\Http\Requests\Dispatches\RespondDispatchRequest;
 use App\Http\Requests\Dispatches\StoreDispatchesRequest;
 use App\Models\Buyer;
@@ -10,10 +11,12 @@ use App\Models\RiceVariety;
 use App\Models\Sample;
 use App\Models\SampleDispatch;
 use App\Services\DispatchService;
+use App\Support\PdfReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class SampleDispatchController extends Controller
 {
@@ -42,6 +45,38 @@ class SampleDispatchController extends Controller
             'varieties' => RiceVariety::orderBy('name')->pluck('name', 'id'),
             'filterMill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id']) : null,
         ]);
+    }
+
+    /** The dispatch list with its tab, filters and dates as a PDF (every matching dispatch). */
+    public function pdf(Request $request): Response
+    {
+        $this->authorize('viewAny', SampleDispatch::class);
+
+        $filters = array_filter($request->only(['q', 'status', 'buyer_id', 'mill_id', 'variety_id', 'from', 'to']), fn ($v) => is_string($v) && $v !== '');
+        $query = SampleDispatch::query()->filter($filters);
+        $total = $query->count();
+        $dispatches = $query
+            ->with(['buyer:id,name,city', 'sample:id,sample_number,mill_id,rice_variety_id', 'sample.mill:id,name,city', 'sample.variety:id,name'])
+            ->latest('dispatch_date')->latest('id')
+            ->limit(PdfReport::MAX_ROWS)->get();
+        $list = isset($filters['status']) ? (DispatchStatus::tryFrom($filters['status'])?->label() ?? 'All dispatches') : 'All dispatches';
+
+        return PdfReport::download('pdf.records', [
+            'type' => 'dispatches',
+            'typeLabel' => $list,
+            'records' => $dispatches,
+            'total' => $total,
+            'truncated' => $total > $dispatches->count(),
+            'criteria' => array_filter([
+                'List' => $list,
+                'Search' => $filters['q'] ?? null,
+                'Mill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id'])?->label() : null,
+                'Buyer' => isset($filters['buyer_id']) ? Buyer::find($filters['buyer_id'])?->name : null,
+                'Variety' => isset($filters['variety_id']) ? RiceVariety::find($filters['variety_id'])?->name : null,
+                'Dispatch date' => PdfReport::period($filters['from'] ?? null, $filters['to'] ?? null),
+            ]),
+            'summary' => RecordsController::dispatchSummary($dispatches),
+        ], 'Dispatch Register', 'dispatches');
     }
 
     public function create(Request $request): View

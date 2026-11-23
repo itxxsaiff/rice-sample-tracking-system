@@ -18,6 +18,14 @@ const RECORD_LABELS = {
     loadings: 'Truck loadings', completed: 'Completed orders',
 };
 
+/** Same wording as PdfReport::period() on the server. */
+export function period(from, to) {
+    if (from && to) return `${fmtDate(from)} - ${fmtDate(to)}`;
+    if (from) return `from ${fmtDate(from)}`;
+    if (to) return `up to ${fmtDate(to)}`;
+    return 'All dates';
+}
+
 const deviceNote = (ctx) => ['Data', `on this device (last ${ctx.historyDays || 10} days and open orders)`];
 const totalsLabel = (totals) => Object.entries(totals).map(([unit, value]) => qty(value, unit)).join(', ') || '-';
 
@@ -123,9 +131,9 @@ function base(ctx, title, filename) {
     return { title, filename, printedBy: readActiveUser()?.name, sections: [] };
 }
 
-export function recordsReport(ctx, type, q, rows) {
+export function recordsReport(ctx, type, q, rows, { from = '', to = '', dateLabel = 'Date' } = {}) {
     const spec = base(ctx, RECORD_TITLES[type], `records-${type}`);
-    spec.criteria = [['List', RECORD_LABELS[type]], ...(q ? [['Search', q]] : []), deviceNote(ctx)];
+    spec.criteria = [['List', RECORD_LABELS[type]], ...(q ? [['Search', q]] : []), [dateLabel, period(from, to)], deviceNote(ctx)];
     if (type === 'loadings') {
         const trucks = rows;
         spec.summary = [
@@ -225,12 +233,13 @@ function sampleSection(ctx, samples, { hideMill = false } = {}) {
     return { heading: 'Samples', columns, rows, empty: 'No samples on this device.' };
 }
 
-export function samplesReport(ctx, samples, { q, variety } = {}) {
+export function samplesReport(ctx, samples, { q, variety, from, to } = {}) {
     const spec = base(ctx, 'Sample Register', 'samples');
     const sent = samples.filter((s) => ctx.dispatchesOf(s.uuid).length);
     spec.criteria = [
         ...(q ? [['Search', q]] : []),
         ...(variety ? [['Variety', ctx.variety(variety)?.name || '-']] : []),
+        ['Collected', period(from, to)],
         deviceNote(ctx),
     ];
     spec.summary = [
@@ -241,6 +250,16 @@ export function samplesReport(ctx, samples, { q, variety } = {}) {
         ['Not sent yet', String(samples.length - sent.length)],
     ];
     spec.sections.push(sampleSection(ctx, samples));
+    return spec;
+}
+
+/** The Dispatches page (its tab, search and dates) as a Dispatch Register. */
+export function dispatchesReport(ctx, dispatches, { status = '', q = '', from = '', to = '' } = {}) {
+    const list = { pending: 'Awaiting response', confirmed: 'Confirmed', rejected: 'Rejected' }[status] || 'All dispatches';
+    const spec = recordsReport(ctx, 'dispatches', q, dispatches, { from, to, dateLabel: 'Dispatch date' });
+    spec.filename = 'dispatches';
+    spec.criteria[0] = ['List', list];
+    spec.sections[0].heading = list;
     return spec;
 }
 

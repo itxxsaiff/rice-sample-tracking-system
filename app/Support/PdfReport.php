@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -57,6 +58,19 @@ final class PdfReport
             'Content-Disposition' => 'attachment; filename="'.$name.'"',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /** "01 Nov 2026 – 21 Nov 2026", "from …", "up to …" or "All dates", for the line describing a printed list. */
+    public static function period(?string $from, ?string $to): string
+    {
+        $date = fn (string $d) => rescue(fn () => Carbon::parse($d)->format('d M Y'), $d, false);
+
+        return match (true) {
+            filled($from) && filled($to) => $date($from).' – '.$date($to),
+            filled($from) => 'from '.$date($from),
+            filled($to) => 'up to '.$date($to),
+            default => 'All dates',
+        };
     }
 
     private static function logo(): string

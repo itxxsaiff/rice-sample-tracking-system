@@ -19,8 +19,9 @@ It is **not** an ERP or accounting system. There are no payments, ledgers or inv
 | **Buyer response** | Recorded in a popup from the dispatch list, dashboard or dispatch page: confirm (quantity in maund, rate per maund, bag size 5–100 kg, date) or reject (one tap, no reason); validated transitions |
 | **Loading** | Confirmed orders only; multiple trucks per order (`LD-0001`) with quantity (in the order's unit, maund), bags, bag size, driver and photos; the buyer is recorded as receiver; the order completes itself when the loaded quantity reaches the confirmed quantity |
 | **Records** | Filterable history of dispatches, confirmations, rejections, truck loadings and completed orders |
-| **PDF export** | **Export PDF** on Records (the current tab and filters, every matching row), Samples (the current filters, with the buyers each sample went to), each buyer (statement of all samples sent, answers and trucks loaded) and each mill (all samples collected and every buyer's answer). A4 with the company letterhead and page numbers; made on the server with dompdf, or on the device with jsPDF when offline |
+| **PDF export** | **Export PDF** on Records (the current tab and filters, every matching row), Samples (the current filters, with the buyers each sample went to), Dispatches (the current tab and filters), each buyer (statement of all samples sent, answers and trucks loaded) and each mill (all samples collected and every buyer's answer). A4 with the company letterhead and page numbers; made on the server with dompdf, or on the device with jsPDF when offline |
 | **Search** | One search box across samples, dispatches, mills, buyers and trucks |
+| **Date filters** | **From / To** on Samples (collection date), Dispatches (dispatch date) and Records (the tab's date), online and offline; every PDF prints only that period and names it |
 | **Users** | Admin creates employee logins, resets passwords, deactivates accounts |
 | **Offline mode** | Installable app that keeps working without internet and syncs automatically when the connection returns (see below) |
 
@@ -68,7 +69,7 @@ The app is an installable Progressive Web App. Online it behaves exactly as befo
 | Buyer responses | Confirm or reject a pending dispatch in the response popup |
 | Loading | Record trucks with photos, mark trucks loaded, complete the order |
 | Records | Same tabs as online, for the data on the device |
-| PDF export | Records, Samples, buyer and mill PDFs made on the device from its data (last `OFFLINE_HISTORY_DAYS` days and open orders), same layout as online, marked "offline copy" |
+| PDF export | Records, Samples, Dispatches, buyer and mill PDFs made on the device from its data (last `OFFLINE_HISTORY_DAYS` days and open orders), same layout as online, marked "offline copy" |
 | Menu | The same full menu as online, from the menu button on phones |
 | Online only | Global search, Manage Users, My Account, deleting, editing an existing response, editing loaded trucks (their menu items stay visible and explain this) |
 
