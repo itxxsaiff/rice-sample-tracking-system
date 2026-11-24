@@ -1679,3 +1679,7 @@ td .mono {
 .sample-row-num .sample-row-ref:empty {
     display: none;
 }
+
+.date-filter .btn {
+    z-index: 0;
+}

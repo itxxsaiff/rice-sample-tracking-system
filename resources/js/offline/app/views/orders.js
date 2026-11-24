@@ -50,10 +50,8 @@ export function dispatchList(ctx, params, query) {
         mount(root) {
             const form = root.querySelector('[data-search]');
             const update = () => { history.replaceState(null, '', `#/dispatches?status=${status}&q=${encodeURIComponent(form.q.value)}&from_no=${encodeURIComponent(form.from_no.value)}&to_no=${encodeURIComponent(form.to_no.value)}`); window.dispatchEvent(new Event('rst:rerender')); };
-            form.addEventListener('submit', (e) => e.preventDefault());
+            form.addEventListener('submit', (e) => { e.preventDefault(); update(); });
             form.q.addEventListener('input', update);
-            form.from_no.addEventListener('change', update);
-            form.to_no.addEventListener('change', update);
             root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => dispatchesReport(ctx, rows, { status, q, fromNo, toNo })));
         },
     };

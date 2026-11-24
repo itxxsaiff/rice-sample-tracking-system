@@ -133,7 +133,8 @@ export function inNumberRange(reference, from, to) {
 
 /** "From / To" reference-number filter, same look as the online x-number-range component. */
 export function numberRange(fromNo, toNo, prefix = 'SMP', label = 'Sample no.', cls = 'col-6 col-lg-3') {
-    const box = (name, text, value, placeholder) => `<div class="${cls}"><div class="input-group date-filter"><span class="input-group-text">${text}</span><span class="input-group-text number-prefix">${h(prefix)}-</span>
-        <input type="text" name="${name}" value="${h(value || '')}" inputmode="numeric" autocomplete="off" class="form-control" placeholder="${placeholder}" aria-label="${h(label)} ${text.toLowerCase()}"></div></div>`;
+    const apply = '<button type="submit" class="btn btn-primary" title="Apply filter" aria-label="Apply filter"><i class="bi bi-funnel"></i><span class="d-none d-xl-inline ms-1">Apply</span></button>';
+    const box = (name, text, value, placeholder) => `<div class="${cls}"><div class="input-group date-filter"><span class="input-group-text">${text}</span><span class="input-group-text number-prefix d-none d-md-flex">${h(prefix)}-</span>
+        <input type="text" name="${name}" value="${h(value || '')}" inputmode="numeric" autocomplete="off" class="form-control" placeholder="${placeholder}" aria-label="${h(label)} ${text.toLowerCase()}">${name === 'to_no' ? apply : ''}</div></div>`;
     return box('from_no', 'From', fromNo, '0255') + box('to_no', 'To', toNo, '0300');
 }
