@@ -26,7 +26,7 @@
                         @foreach ($cities as $city)<option value="{{ $city }}" @selected(($filters['city'] ?? '') === $city)>{{ $city }}</option>@endforeach
                     </select>
                 </div>
-                <x-date-range :from="$filters['from'] ?? null" :to="$filters['to'] ?? null" label="Collection date" class="col-6 col-lg-3" />
+                <x-number-range :from="$filters['from_no'] ?? null" :to="$filters['to_no'] ?? null" prefix="SMP" label="Sample no." />
                 <div class="col-12 col-lg-6">
                     <select name="sent" class="form-select" aria-label="Dispatch status">
                         <option value="">Sent &amp; not sent</option>

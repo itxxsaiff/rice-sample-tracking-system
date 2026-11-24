@@ -1,4 +1,4 @@
-@props(['size' => 40, 'dark' => false])
-{{-- Ukasha Pacific International logo (same artwork as the company website). The dark version suits light backgrounds such as the sign-in page. --}}
-<img src="{{ asset($dark ? 'images/logo-dark.png' : 'images/logo.png') }}" alt="Ukasha Pacific International"
+@props(['size' => 40])
+{{-- Ukasha Pacific International logo (the TM version), used everywhere in the app. --}}
+<img src="{{ asset('images/logo-dark.png') }}" alt="Ukasha Pacific International"
      {{ $attributes->merge(['class' => 'brand-logo', 'style' => "height:{$size}px;width:auto"]) }}>

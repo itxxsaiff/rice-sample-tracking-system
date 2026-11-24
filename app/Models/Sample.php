@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\RecordsActivity;
 use App\Models\Concerns\Syncable;
+use App\Support\ReferenceNumber;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -86,6 +87,7 @@ class Sample extends Model
             ->when($filters['city'] ?? null, fn (Builder $q, $city) => $q->whereHas('mill', fn (Builder $m) => $m->where('city', $city)))
             ->when($filters['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '>=', $date))
             ->when($filters['to'] ?? null, fn (Builder $q, $date) => $q->whereDate('collection_date', '<=', $date))
+            ->tap(fn (Builder $q) => ReferenceNumber::whereBetween($q, 'sample_number', ReferenceNumber::parse($filters['from_no'] ?? null), ReferenceNumber::parse($filters['to_no'] ?? null)))
             ->when(($filters['sent'] ?? null) === 'no', fn (Builder $q) => $q->doesntHave('dispatches'))
             ->when(($filters['sent'] ?? null) === 'yes', fn (Builder $q) => $q->has('dispatches'));
     }

@@ -155,6 +155,8 @@ function initPdfExports() {
         const link = event.target.closest('a[data-pdf-export]');
         if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey) return;
         event.preventDefault();
+        const chooser = link.closest('.modal');
+        if (chooser) Modal.getInstance(chooser)?.hide();
 
         const { checkServer } = await import('../offline/sync');
         if ((await checkServer()).reachable) {

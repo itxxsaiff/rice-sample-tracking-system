@@ -10,6 +10,7 @@ use App\Models\Sample;
 use App\Services\SampleService;
 use App\Support\PdfReport;
 use App\Support\PhotoStorage;
+use App\Support\ReferenceNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,7 +25,7 @@ class SampleController extends Controller
     {
         $this->authorize('viewAny', Sample::class);
 
-        $filters = $request->only(['q', 'mill_id', 'variety_id', 'city', 'from', 'to', 'sent']);
+        $filters = $request->only(['q', 'mill_id', 'variety_id', 'city', 'from_no', 'to_no', 'sent']);
 
         $samples = Sample::query()
             ->with(['mill:id,name,city', 'variety:id,name'])
@@ -47,7 +48,7 @@ class SampleController extends Controller
     {
         $this->authorize('viewAny', Sample::class);
 
-        $filters = array_filter($request->only(['q', 'mill_id', 'variety_id', 'city', 'from', 'to', 'sent']), fn ($v) => is_string($v) && $v !== '');
+        $filters = array_filter($request->only(['q', 'mill_id', 'variety_id', 'city', 'from_no', 'to_no', 'sent']), fn ($v) => is_string($v) && $v !== '');
         $query = Sample::query()->filter($filters);
         $total = $query->count();
         $samples = $query
@@ -66,7 +67,7 @@ class SampleController extends Controller
                 'Mill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id'])?->label() : null,
                 'Variety' => isset($filters['variety_id']) ? RiceVariety::find($filters['variety_id'])?->name : null,
                 'City' => $filters['city'] ?? null,
-                'Collected' => PdfReport::period($filters['from'] ?? null, $filters['to'] ?? null),
+                'Sample no.' => ReferenceNumber::rangeLabel('sample', ReferenceNumber::parse($filters['from_no'] ?? null), ReferenceNumber::parse($filters['to_no'] ?? null)),
                 'Showing' => ['no' => 'Not sent yet', 'yes' => 'Sent to buyers'][$filters['sent'] ?? ''] ?? null,
             ]),
             'summary' => [
@@ -91,6 +92,8 @@ class SampleController extends Controller
             'rows' => $rows,
             'mills' => Mill::whereIn('id', $millIds)->get()->keyBy('id'),
             'varieties' => RiceVariety::options(),
+            // Shown on each row; the number is only given when the sample is saved.
+            'nextNumber' => ReferenceNumber::parse(ReferenceNumber::peek('sample')),
         ]);
     }
 

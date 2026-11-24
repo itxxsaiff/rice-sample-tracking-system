@@ -21,7 +21,7 @@ class PwaController extends Controller
             ->sort()->values();
 
         $precache = $assets->merge([
-            '/offline-shell', '/images/logo.png', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon-32.png', '/site.webmanifest',
+            '/offline-shell', '/images/logo-dark.png', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/favicon-32.png', '/site.webmanifest',
         ])->unique()->values();
 
         // Changes whenever the build, the worker or the shell changes.
@@ -49,6 +49,9 @@ class PwaController extends Controller
             'cities' => config('rice.cities'),
             'max_photos' => config('rice.max_photos_per_upload'),
             'max_days_without_server' => config('offline.max_days_without_server'),
+            'prefixes' => config('rice.prefixes'),
+            'unit_kg' => config('rice.unit_kg'),
+            'sample_number_start' => config('rice.number_start.sample'),
         ];
 
         return response()->view('offline.shell', compact('config'))->header('Cache-Control', 'no-cache');

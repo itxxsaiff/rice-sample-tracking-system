@@ -14,10 +14,16 @@ export function initSampleRows() {
     const saveLabel = document.querySelector('[data-save-label]');
     let nextKey = parseInt(builder.dataset.nextKey || '0', 10);
 
+    // The numbers the rows will get when saved (SMP-0294, SMP-0295, …), shown read-only.
+    const next = parseInt(builder.dataset.numberNext || '', 10);
+    const prefix = builder.dataset.numberPrefix || 'SMP';
+
     const renumber = () => {
         const rows = container.querySelectorAll('.sample-row');
         rows.forEach((row, i) => {
             row.querySelector('[data-row-number]').textContent = i + 1;
+            const ref = row.querySelector('[data-row-ref]');
+            if (ref) ref.textContent = Number.isFinite(next) ? `No. ${prefix}-${String(next + i).padStart(4, '0')}` : '';
             row.querySelector('[data-remove-row]').classList.toggle('invisible', rows.length === 1);
         });
         if (saveLabel) saveLabel.textContent = rows.length > 1 ? `Save ${rows.length} samples` : 'Save sample';

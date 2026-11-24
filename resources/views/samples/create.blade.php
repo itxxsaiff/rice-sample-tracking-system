@@ -7,7 +7,7 @@
     <form method="POST" action="{{ route('samples.store') }}" data-offline-op="sample.create" novalidate>
         @csrf
         @error('samples')<div class="alert alert-danger py-2">{{ $message }}</div>@enderror
-        <div class="card mb-4" data-sample-rows-builder data-next-key="{{ $nextKey }}">
+        <div class="card mb-4" data-sample-rows-builder data-next-key="{{ $nextKey }}" data-number-next="{{ $nextNumber }}" data-number-prefix="{{ config('rice.prefixes.sample') }}">
             <div class="card-body">
                 <div data-sample-rows>
                     @foreach ($rows as $key => $row)

@@ -6,6 +6,7 @@ use App\Enums\DispatchStatus;
 use App\Enums\LoadingStatus;
 use App\Models\Concerns\RecordsActivity;
 use App\Models\Concerns\Syncable;
+use App\Support\ReferenceNumber;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -225,6 +226,7 @@ class SampleDispatch extends Model
             ->when($filters['sample_id'] ?? null, fn (Builder $q, $id) => $q->where('sample_id', $id))
             ->when($filters['mill_id'] ?? null, fn (Builder $q, $id) => $q->whereHas('sample', fn (Builder $s) => $s->where('mill_id', $id)))
             ->when($filters['variety_id'] ?? null, fn (Builder $q, $id) => $q->whereHas('sample', fn (Builder $s) => $s->where('rice_variety_id', $id)))
+            ->tap(fn (Builder $q) => ReferenceNumber::whereBetween($q, 'dispatch_number', ReferenceNumber::parse($filters['from_no'] ?? null), ReferenceNumber::parse($filters['to_no'] ?? null)))
             ->when($filters['from'] ?? null, fn (Builder $q, $date) => $q->whereDate('dispatch_date', '>=', $date))
             ->when($filters['to'] ?? null, fn (Builder $q, $date) => $q->whereDate('dispatch_date', '<=', $date));
     }

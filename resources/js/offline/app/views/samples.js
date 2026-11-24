@@ -3,7 +3,7 @@ import { enqueue } from '../../outbox';
 import { input, mountPicker, picker, quickAddDialog, select, setPicker, showErrors, textarea, values } from '../fields';
 import { pdfButton, runExport, samplesReport } from '../reports';
 import { sampleLabel } from '../store';
-import { cfg, dateRange, detail, empty, fmtDate, go, h, inRange, matches, newestFirst, pageHeader, pendingBadge, qty, savedToast, stageBadge, today } from '../util';
+import { cfg, detail, empty, fmtDate, go, h, inNumberRange, matches, numberRange, newestFirst, pageHeader, pendingBadge, qty, savedToast, stageBadge, today } from '../util';
 import { saveDirectory } from './directory';
 
 /** Samples — offline. */
@@ -11,11 +11,11 @@ import { saveDirectory } from './directory';
 export function samplesList(ctx, params, query) {
     const q = query.get('q') || '';
     const variety = query.get('variety') || '';
-    const from = query.get('from') || '';
-    const to = query.get('to') || '';
+    const fromNo = query.get('from_no') || '';
+    const toNo = query.get('to_no') || '';
     const rows = ctx.samples
         .filter((s) => !variety || s.variety_uuid === variety)
-        .filter((s) => inRange(s.collection_date, from, to))
+        .filter((s) => inNumberRange(s.sample_number, fromNo, toNo))
         .filter((s) => { const l = sampleLabel(ctx, s); return matches(`${l.number} ${l.mill} ${l.city} ${l.variety}`, q); })
         .sort(newestFirst('collection_date'));
 
@@ -26,20 +26,20 @@ export function samplesList(ctx, params, query) {
             <form class="filter-bar" data-search><div class="row g-2">
                 <div class="col-12 col-lg-6"><div class="search-input"><i class="bi bi-search"></i><input type="search" name="q" value="${h(q)}" class="form-control" placeholder="Sample no., mill, variety"></div></div>
                 <div class="col-12 col-lg-6">${select('variety', '', ctx.varietyOptions(variety), { value: variety, placeholder: 'All varieties', cls: '' })}</div>
-                ${dateRange(from, to, 'Collection date')}
+                ${numberRange(fromNo, toNo, cfg().prefixes?.sample || 'SMP', 'Sample no.')}
             </div></form>
             ${rows.length ? `<div class="list-group list-group-flush">${rows.map((s) => sampleItem(ctx, s)).join('')}</div>` : empty('basket', 'No samples on this device', 'Record samples as you collect them at mills.', '<a href="#/samples/new" class="btn btn-primary">Add sample</a>')}
         </div>`,
         keepFocus: '[name=q]',
         mount(root) {
             const form = root.querySelector('[data-search]');
-            const update = () => { history.replaceState(null, '', `#/samples?q=${encodeURIComponent(form.q.value)}&variety=${form.variety.value}&from=${form.from.value}&to=${form.to.value}`); window.dispatchEvent(new Event('rst:rerender')); };
+            const update = () => { history.replaceState(null, '', `#/samples?q=${encodeURIComponent(form.q.value)}&variety=${form.variety.value}&from_no=${encodeURIComponent(form.from_no.value)}&to_no=${encodeURIComponent(form.to_no.value)}`); window.dispatchEvent(new Event('rst:rerender')); };
             form.addEventListener('submit', (e) => e.preventDefault());
             form.q.addEventListener('input', update);
             form.variety.addEventListener('change', update);
-            form.from.addEventListener('change', update);
-            form.to.addEventListener('change', update);
-            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => samplesReport(ctx, rows, { q, variety, from, to })));
+            form.from_no.addEventListener('change', update);
+            form.to_no.addEventListener('change', update);
+            root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => samplesReport(ctx, rows, { q, variety, fromNo, toNo })));
         },
     };
 }
@@ -108,7 +108,7 @@ function sampleRow(ctx, key, row = {}) {
     const n = (f) => `samples[${key}][${f}]`;
     const mill = row.mill_id ? ctx.mill(row.mill_id) : null;
     return `<div class="sample-row" data-key="${h(key)}">
-        <div class="sample-row-head"><div class="sample-row-num"><span data-row-number>1</span> Sample</div>
+        <div class="sample-row-head"><div class="sample-row-num"><span data-row-number>1</span> Sample <span class="sample-row-ref" data-row-ref title="Sample number: confirmed when it syncs"></span></div>
             <button type="button" class="btn btn-sm btn-light text-danger" data-remove-row aria-label="Remove this sample"><i class="bi bi-trash"></i> Remove</button></div>
         <div class="row">
             ${picker(n('mill_id'), 'Rice mill', { value: mill?.uuid || '', display: mill ? `${mill.name} — ${mill.city}` : '', required: true, quickAdd: 'mill', cls: 'col-md-6 mb-3', placeholder: 'Search mill name or city' })}
@@ -171,9 +171,19 @@ export function sampleNew(ctx, params, query) {
             const form = root.querySelector('[data-form]');
             const rows = form.querySelector('[data-rows]');
             let next = 0;
+            // Expected numbers (after the highest on this device, and any not yet synced); the server confirms them when they sync.
+            const prefix = cfg().prefixes?.sample || 'SMP';
+            const known = ctx.samples.map((x) => parseInt(String(x.sample_number || '').split('-').pop(), 10)).filter(Number.isFinite);
+            const waiting = ctx.samples.filter((x) => !x.sample_number).length;
+            const first = Math.max(Number(cfg().sample_number_start || 1) - 1, ...known) + 1 + waiting;
             const renumber = () => {
                 const all = rows.querySelectorAll('.sample-row');
-                all.forEach((r, i) => { r.querySelector('[data-row-number]').textContent = i + 1; r.querySelector('[data-remove-row]').classList.toggle('invisible', all.length === 1); });
+                all.forEach((r, i) => {
+                    r.querySelector('[data-row-number]').textContent = i + 1;
+                    r.querySelector('[data-remove-row]').classList.toggle('invisible', all.length === 1);
+                    const ref = r.querySelector('[data-row-ref]');
+                    if (ref) ref.textContent = `No. ${prefix}-${String(first + i).padStart(4, '0')} (expected)`;
+                });
                 form.querySelector('[data-save-label]').textContent = all.length > 1 ? `Save ${all.length} samples` : 'Save sample';
             };
             const addRow = (copy = {}) => {

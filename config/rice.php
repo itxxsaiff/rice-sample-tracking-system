@@ -27,6 +27,13 @@ return [
         'bag' => 'Bags',
     ],
 
+    // Kilograms per unit, to work out the number of bags (1000 maund in 25 kg bags = 1600 bags).
+    'unit_kg' => [
+        'maund' => 40,
+        'kg' => 1,
+        'ton' => 1000,
+    ],
+
     // What the agreed rate is quoted against.
     'rate_units' => [
         'per_maund' => '/ Maund',

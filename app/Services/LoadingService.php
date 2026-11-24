@@ -46,6 +46,11 @@ class LoadingService
                 $data['receiver_name'] = $dispatch->buyer()->value('name');
             }
 
+            // Bags worked out from the quantity and bag size when not given.
+            if (blank($data['bag_count'] ?? null)) {
+                $data['bag_count'] = Loading::bagsFor($data['quantity'] ?? null, $data['quantity_unit'], $data['packing_type'] ?? null);
+            }
+
             $loading = new Loading($data);
             $loading->loading_number = ReferenceNumber::next('loading', Loading::class, 'loading_number');
             if ($uuid) {
@@ -79,6 +84,9 @@ class LoadingService
     {
         return $this->guarded(fn () => DB::transaction(function () use ($loading, $data, $photos, $user) {
             $loading->fill($data);
+            if (array_key_exists('bag_count', $data) && blank($data['bag_count'])) {
+                $loading->bag_count = Loading::bagsFor($loading->quantity, $loading->quantity_unit, $loading->packing_type);
+            }
             $changes = array_keys($loading->getDirty());
             $loading->save();
             $this->attachPhotos($loading, $photos, $user);

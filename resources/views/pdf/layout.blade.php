@@ -12,9 +12,9 @@
     /* Letterhead */
     .letterhead td { vertical-align: middle; padding: 0; }
     .letterhead .logo { height: 54px; width: auto; }
-    .letterhead .company { font-size: 13.5pt; font-weight: bold; color: #0f2a4a; }
+    .letterhead .company { font-size: 12pt; font-weight: bold; color: #0f2a4a; }
     .letterhead .company-sub { font-size: 7pt; color: #7a828d; letter-spacing: 1.4px; text-transform: uppercase; margin-top: 2px; }
-    .letterhead .doc-title { font-size: 15pt; font-weight: bold; color: #0f2a4a; text-align: right; }
+    .letterhead .doc-title { font-size: 14pt; font-weight: bold; color: #0f2a4a; text-align: right; }
     .letterhead .doc-meta { font-size: 7.4pt; color: #7a828d; text-align: right; margin-top: 3px; }
     .rule { border-top: 2px solid #0f2a4a; margin-top: 12px; }
     .rule-accent { border-top: 0.8px solid #b8894c; margin-top: 2px; margin-bottom: 14px; }
@@ -65,6 +65,12 @@
     .muted { color: #9aa1ab; }
     .note { font-size: 7.4pt; color: #7a828d; margin-top: -8px; margin-bottom: 14px; }
     .empty { padding: 22px 0; text-align: center; color: #7a828d; border-top: 0.6px solid #e3e7ec; border-bottom: 0.6px solid #e3e7ec; margin-bottom: 18px; }
+    .truck-photos { margin-bottom: 12px; page-break-inside: avoid; }
+    .truck-photos-head { font-size: 8pt; color: #4b5563; padding: 4px 0; border-bottom: 0.6px solid #e3e7ec; margin-bottom: 6px; }
+    .truck-photos-head b { color: #0f2a4a; }
+    .photo-grid { table-layout: fixed; }
+    .photo-grid td { width: 25%; padding: 0 6px 6px 0; vertical-align: top; }
+    .photo-grid img { width: 100%; height: auto; border: 0.6px solid #e3e7ec; }
     .end { text-align: center; font-size: 7pt; color: #9aa1ab; letter-spacing: 1px; margin-top: 6px; }
 </style>
 </head>

@@ -5,6 +5,7 @@ namespace App\Support;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class PdfReport
 {
-    public const COMPANY = 'Ukasha Pacific International';
+    public const COMPANY = 'Ukasha Pacific International (SMC-Pvt) Ltd.';
 
     /** Rows beyond this are left out of one PDF (the document says so). */
     public const MAX_ROWS = 3000;
@@ -71,6 +72,29 @@ final class PdfReport
             filled($to) => 'up to '.$date($to),
             default => 'All dates',
         };
+    }
+
+    /**
+     * A loading photo as a small JPEG data URI for the PDF (keeps the file
+     * light). Without GD, JPEG photos are embedded as they are; others are skipped.
+     */
+    public static function photo(?string $path, int $width = 420): ?string
+    {
+        if (! $path || ! Storage::disk(PhotoStorage::DISK)->exists($path)) {
+            return null;
+        }
+        $bytes = Storage::disk(PhotoStorage::DISK)->get($path);
+
+        if (function_exists('imagecreatefromstring') && ($image = @imagecreatefromstring($bytes))) {
+            $scale = min(1, $width / max(1, imagesx($image)));
+            $thumb = imagescale($image, max(1, (int) round(imagesx($image) * $scale)), max(1, (int) round(imagesy($image) * $scale)));
+            ob_start();
+            imagejpeg($thumb ?: $image, null, 72);
+
+            return 'data:image/jpeg;base64,'.base64_encode((string) ob_get_clean());
+        }
+
+        return str_starts_with($bytes, "\xFF\xD8") ? 'data:image/jpeg;base64,'.base64_encode($bytes) : null;
     }
 
     private static function logo(): string

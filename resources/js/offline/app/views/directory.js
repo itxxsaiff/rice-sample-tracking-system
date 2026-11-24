@@ -2,7 +2,7 @@ import { uuid } from '../../db';
 import { enqueue } from '../../outbox';
 import { input, showErrors, textarea, values } from '../fields';
 import { sampleLabel } from '../store';
-import { buyerReport, millReport, pdfButton, runExport } from '../reports';
+import { buyerReport, millReport, pdfButton, pickReport, runExport } from '../reports';
 import { cfg, detail, empty, fmtDate, go, h, matches, newestFirst, pageHeader, pendingBadge, qty, rate, savedToast, stageBadge } from '../util';
 
 /** Rice mills and buyers: list, profile with history, add/edit — offline. */
@@ -89,7 +89,13 @@ export function directoryShow(kind) {
                 </dl></div></div>
                 ${history}`,
             mount(root) {
-                root.querySelector('[data-export-pdf]').addEventListener('click', (e) => runExport(e.currentTarget, () => (kind === 'mill' ? millReport(ctx, r) : buyerReport(ctx, r))));
+                root.querySelector('[data-export-pdf]').addEventListener('click', async (e) => {
+                    const button = e.currentTarget;
+                    const part = await pickReport(r.name, kind === 'mill'
+                        ? [['samples', 'Samples', 'Every sample collected from this mill and which buyers it went to.', 'basket'], ['responses', 'Buyer responses', 'What each buyer answered: confirmed quantity, rate or rejection.', 'reply']]
+                        : [['samples', 'Samples sent', 'Every sample sent, the answer, agreed quantity and rate, and how much is loaded.', 'basket'], ['loadings', 'Truck loadings', 'Every truck loaded for this buyer, with its photos.', 'truck']]);
+                    if (part) runExport(button, () => (kind === 'mill' ? millReport(ctx, r, part) : buyerReport(ctx, r, part)));
+                });
             },
         };
     };

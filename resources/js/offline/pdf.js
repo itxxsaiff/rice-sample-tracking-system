@@ -9,7 +9,7 @@ import logoUrl from '../../pdf/logo.jpg';
  * the main line is drawn dark (or in the tone's colour), sub lines small and grey.
  */
 
-const COMPANY = 'Ukasha Pacific International';
+const COMPANY = 'Ukasha Pacific International (SMC-Pvt) Ltd.';
 const NAVY = [15, 42, 74];
 const INK = [31, 41, 51];
 const DARK = [17, 24, 39];
@@ -44,12 +44,12 @@ function letterhead(doc, title, printedBy) {
         doc.addImage(doc.__logo, 'JPEG', x, M.top, 57, 40.5);
         x += 66;
     }
-    doc.setFont('helvetica', 'bold').setFontSize(13.5).setTextColor(...NAVY);
+    doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor(...NAVY);
     doc.text(COMPANY, x, M.top + 19);
     doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...GREY);
     doc.text('RICE SAMPLES  ·  TRACKING & DISPATCH', x, M.top + 30, { charSpace: 1 });
 
-    doc.setFont('helvetica', 'bold').setFontSize(15).setTextColor(...NAVY);
+    doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor(...NAVY);
     doc.text(safe(title), W - M.right, M.top + 19, { align: 'right' });
     const now = new Date();
     const printed = `Printed ${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}${printedBy ? ` · ${printedBy}` : ''} · offline copy`;
@@ -194,6 +194,38 @@ function table(doc, autoTable, section, y) {
     return doc.lastAutoTable.finalY + 18;
 }
 
+/** Truck photos: a line per truck, then its photos four to a row. */
+function photos(doc, section, y) {
+    const W = doc.internal.pageSize.getWidth();
+    const gap = 6;
+    const cell = (W - M.left - M.right - gap * 3) / 4;
+    y = ensureSpace(doc, y, 60);
+    y = heading(doc, section.heading, null, y) + 8;
+    for (const group of section.groups) {
+        y = ensureSpace(doc, y, 40);
+        doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(75, 85, 99).text(safe(group.title), M.left, y);
+        doc.setDrawColor(...HAIR).setLineWidth(0.6).line(M.left, y + 4, W - M.right, y + 4);
+        y += 12;
+        for (let i = 0; i < group.images.length; i += 4) {
+            const row = group.images.slice(i, i + 4);
+            const rowHeight = Math.max(...row.map((img) => cell * (img.h / img.w)));
+            y = ensureSpace(doc, y, rowHeight + gap);
+            row.forEach((img, j) => {
+                const h = cell * (img.h / img.w);
+                doc.addImage(img.data, 'JPEG', M.left + j * (cell + gap), y, cell, h);
+                doc.setDrawColor(...HAIR).rect(M.left + j * (cell + gap), y, cell, h);
+            });
+            y += rowHeight + gap;
+        }
+        if (group.note) {
+            doc.setFont('helvetica', 'normal').setFontSize(7.4).setTextColor(...GREY).text(safe(group.note), M.left, y + 4);
+            y += 12;
+        }
+        y += 8;
+    }
+    return y + 6;
+}
+
 function footer(doc, title) {
     const pages = doc.getNumberOfPages();
     const W = doc.internal.pageSize.getWidth();
@@ -219,6 +251,7 @@ export async function exportPdf(spec) {
     if (spec.summary?.length) y = summary(doc, spec.summary, y);
 
     for (const section of spec.sections) {
+        if (section.kind === 'photos') { y = photos(doc, section, y); continue; }
         if (section.skipWhenEmpty && !section.rows.length) continue;
         y = ensureSpace(doc, y, 60);
         y = heading(doc, section.heading, section.count ?? section.rows.length, y);

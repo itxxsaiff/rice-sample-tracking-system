@@ -12,6 +12,7 @@ use App\Models\Sample;
 use App\Models\SampleDispatch;
 use App\Services\DispatchService;
 use App\Support\PdfReport;
+use App\Support\ReferenceNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ class SampleDispatchController extends Controller
     {
         $this->authorize('viewAny', SampleDispatch::class);
 
-        $filters = $request->only(['q', 'status', 'buyer_id', 'mill_id', 'variety_id', 'from', 'to']);
+        $filters = $request->only(['q', 'status', 'buyer_id', 'mill_id', 'variety_id', 'from_no', 'to_no']);
 
         $dispatches = SampleDispatch::query()
             ->with(['buyer:id,name,city', 'sample:id,sample_number,mill_id,rice_variety_id,photo_path', 'sample.mill:id,name,city', 'sample.variety:id,name'])
@@ -52,7 +53,7 @@ class SampleDispatchController extends Controller
     {
         $this->authorize('viewAny', SampleDispatch::class);
 
-        $filters = array_filter($request->only(['q', 'status', 'buyer_id', 'mill_id', 'variety_id', 'from', 'to']), fn ($v) => is_string($v) && $v !== '');
+        $filters = array_filter($request->only(['q', 'status', 'buyer_id', 'mill_id', 'variety_id', 'from_no', 'to_no']), fn ($v) => is_string($v) && $v !== '');
         $query = SampleDispatch::query()->filter($filters);
         $total = $query->count();
         $dispatches = $query
@@ -73,7 +74,7 @@ class SampleDispatchController extends Controller
                 'Mill' => isset($filters['mill_id']) ? Mill::find($filters['mill_id'])?->label() : null,
                 'Buyer' => isset($filters['buyer_id']) ? Buyer::find($filters['buyer_id'])?->name : null,
                 'Variety' => isset($filters['variety_id']) ? RiceVariety::find($filters['variety_id'])?->name : null,
-                'Dispatch date' => PdfReport::period($filters['from'] ?? null, $filters['to'] ?? null),
+                'Dispatch no.' => ReferenceNumber::rangeLabel('dispatch', ReferenceNumber::parse($filters['from_no'] ?? null), ReferenceNumber::parse($filters['to_no'] ?? null)),
             ]),
             'summary' => RecordsController::dispatchSummary($dispatches),
         ], 'Dispatch Register', 'dispatches');

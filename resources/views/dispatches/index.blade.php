@@ -36,7 +36,7 @@
                         @foreach ($varieties as $id => $name)<option value="{{ $id }}" @selected(($filters['variety_id'] ?? '') == $id)>{{ $name }}</option>@endforeach
                     </select>
                 </div>
-                <x-date-range :from="$filters['from'] ?? null" :to="$filters['to'] ?? null" label="Dispatch date" class="col-6 col-lg-3" />
+                <x-number-range :from="$filters['from_no'] ?? null" :to="$filters['to_no'] ?? null" prefix="DSP" label="Dispatch no." />
                 @if ($filterMill)
                     <input type="hidden" name="mill_id" value="{{ $filterMill->id }}">
                     <div class="col-12"><span class="badge text-bg-light border p-2">Mill: {{ $filterMill->name }} <a href="{{ request()->fullUrlWithoutQuery(['mill_id', 'page']) }}" aria-label="Clear mill filter"><i class="bi bi-x"></i></a></span></div>

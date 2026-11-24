@@ -1,5 +1,5 @@
 {{-- Truck loading register: same columns as the on-screen loadings table. --}}
-@php $hideBuyer ??= false; @endphp
+@php $hideBuyer ??= false; $sampleDetails ??= true; @endphp
 <table class="grid">
     <thead>
         <tr>
@@ -25,7 +25,7 @@
                 @unless ($hideBuyer)<td class="strong">{{ $loading->dispatch->buyer->name }}</td>@endunless
                 <td>
                     <div class="strong">{{ $loading->dispatch->sample->sample_number }} · {{ $loading->dispatch->sample->variety->name }}</div>
-                    <div class="sub">{{ $loading->dispatch->sample->mill->name }}</div>
+                    @if ($sampleDetails)<div class="sub">{{ $loading->dispatch->sample->mill->name }}</div>@endif
                 </td>
                 <td class="nowrap">{{ $loading->loading_date->format('d M Y') }}</td>
                 <td>{{ $loading->driver_name ?: '—' }}@if ($loading->driver_phone)<div class="sub">{{ $loading->driver_phone }}</div>@endif</td>

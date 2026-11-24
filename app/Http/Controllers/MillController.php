@@ -93,19 +93,29 @@ class MillController extends Controller
         })->sortByDesc(fn (SampleDispatch $d) => [$d->dispatch_date->format('Y-m-d'), $d->id])->values());
         $confirmed = $dispatches->filter->isConfirmed();
 
+        // Chosen before exporting: the samples collected, or what the buyers answered.
+        $part = $request->input('part') === 'responses' ? 'responses' : 'samples';
+        $sent = $samples->filter(fn ($s) => $s->dispatches->isNotEmpty())->count();
+
         return PdfReport::download('pdf.mill', [
             'mill' => $mill,
+            'part' => $part,
             'samples' => $samples,
             'dispatches' => $dispatches,
             'varietyName' => $varietyId ? RiceVariety::find($varietyId)?->name : null,
-            'summary' => [
+            'summary' => $part === 'samples' ? [
                 'Samples' => number_format($samples->count()),
                 'Varieties' => number_format($samples->pluck('rice_variety_id')->unique()->count()),
-                'Sent to buyers' => number_format($dispatches->count()),
+                'Sent to buyers' => number_format($sent),
+                'Not sent yet' => number_format($samples->count() - $sent),
+            ] : [
+                'Responses' => number_format($dispatches->count()),
+                'Awaiting' => number_format($dispatches->filter->isPending()->count()),
                 'Confirmed' => number_format($confirmed->count()),
+                'Rejected' => number_format($dispatches->filter->isRejected()->count()),
                 'Agreed' => RecordsController::quantities($confirmed, 'confirmed_quantity', 'confirmed_quantity_unit'),
             ],
-        ], 'Mill Statement', 'mill-'.$mill->name);
+        ], $part === 'samples' ? 'Mill Samples' : 'Buyer Responses', 'mill-'.$mill->name.'-'.$part);
     }
 
     public function edit(Mill $mill): View

@@ -6,7 +6,7 @@
 @endphp
 <div class="sample-row">
     <div class="sample-row-head">
-        <div class="sample-row-num"><span data-row-number>1</span> Sample</div>
+        <div class="sample-row-num"><span data-row-number>1</span> Sample <span class="sample-row-ref" data-row-ref title="Sample number (given automatically)"></span></div>
         <button type="button" class="btn btn-sm btn-light text-danger" data-remove-row aria-label="Remove this sample"><i class="bi bi-trash"></i> Remove</button>
     </div>
     <div class="row">

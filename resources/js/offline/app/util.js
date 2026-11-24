@@ -115,3 +115,25 @@ export function dateRange(from, to, label = 'Date', cls = 'col-6 col-lg-3') {
         <input type="date" name="${name}" value="${h(value || '')}" max="${today()}" class="form-control" aria-label="${h(label)} ${name}" title="${h(label)} ${name}"></div></div>`;
     return box('from', 'From', from) + box('to', 'To', to);
 }
+
+/** "255", "0255" or "SMP-0255" → 255 (null when empty). */
+export function refNumber(value) {
+    const m = String(value ?? '').trim().match(/(\d+)\s*$/);
+    return m ? parseInt(m[1], 10) : null;
+}
+
+/** Is a reference number (e.g. SMP-0260) inside an optional from/to range? Unsynced records have none. */
+export function inNumberRange(reference, from, to) {
+    const lo = refNumber(from);
+    const hi = refNumber(to);
+    if (lo === null && hi === null) return true;
+    const n = reference ? refNumber(reference) : null;
+    return n !== null && (lo === null || n >= lo) && (hi === null || n <= hi);
+}
+
+/** "From / To" reference-number filter, same look as the online x-number-range component. */
+export function numberRange(fromNo, toNo, prefix = 'SMP', label = 'Sample no.', cls = 'col-6 col-lg-3') {
+    const box = (name, text, value, placeholder) => `<div class="${cls}"><div class="input-group date-filter"><span class="input-group-text">${text}</span><span class="input-group-text number-prefix">${h(prefix)}-</span>
+        <input type="text" name="${name}" value="${h(value || '')}" inputmode="numeric" autocomplete="off" class="form-control" placeholder="${placeholder}" aria-label="${h(label)} ${text.toLowerCase()}"></div></div>`;
+    return box('from_no', 'From', fromNo, '0255') + box('to_no', 'To', toNo, '0300');
+}

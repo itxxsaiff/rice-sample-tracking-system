@@ -2,6 +2,7 @@ import * as bootstrap from 'bootstrap';
 import { initUi } from './modules/ui';
 import { initImageInputs } from './modules/images';
 import { initPickers } from './modules/picker';
+import { initBagCounts } from './modules/bag-count';
 import { initDispatchGroups } from './modules/dispatch-groups';
 import { initQuickAdd } from './modules/quick-add';
 import { initSampleRows } from './modules/sample-rows';
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initImageInputs();
     initPickers();
     initDispatchGroups();
+    initBagCounts();
     initQuickAdd();
     initSampleRows();
     initResponseForm();

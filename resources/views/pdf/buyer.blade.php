@@ -18,15 +18,41 @@
 
     @include('pdf._summary')
 
-    <h2>Samples sent <span class="count">({{ number_format($dispatches->count()) }})</span></h2>
-    @if ($dispatches->isEmpty())
-        <div class="empty">No samples sent to this buyer{{ $statusLabel ? ' in this list' : '' }}.</div>
+    @if ($part === 'samples')
+        <h2>Samples sent <span class="count">({{ number_format($dispatches->count()) }})</span></h2>
+        @if ($dispatches->isEmpty())
+            <div class="empty">No samples sent to this buyer{{ $statusLabel ? ' in this list' : '' }}.</div>
+        @else
+            @include('pdf._dispatches', ['hideBuyer' => true, 'showLoaded' => true, 'sampleDetails' => false])
+        @endif
     @else
-        @include('pdf._dispatches', ['hideBuyer' => true, 'showLoaded' => true])
-    @endif
-
-    @if ($loadings->isNotEmpty())
         <h2>Truck loadings <span class="count">({{ number_format($loadings->count()) }})</span></h2>
-        @include('pdf._loadings', ['hideBuyer' => true])
+        @if ($loadings->isEmpty())
+            <div class="empty">No trucks loaded for this buyer yet.</div>
+        @else
+            @include('pdf._loadings', ['hideBuyer' => true, 'sampleDetails' => false])
+
+            <h2>Truck photos</h2>
+            @foreach ($loadings as $loading)
+                @php $photos = $loading->photos->map(fn ($p) => \App\Support\PdfReport::photo($p->path))->filter()->values(); @endphp
+                <div class="truck-photos">
+                    <div class="truck-photos-head">
+                        <b>{{ $loading->truck_number }}</b> · {{ $loading->loading_number }} · {{ $loading->dispatch->dispatch_number }} · {{ $loading->loading_date->format('d M Y') }} · {{ $loading->quantityLabel() }}
+                    </div>
+                    @if ($photos->isEmpty())
+                        <div class="muted">No photos.</div>
+                    @else
+                        <table class="photo-grid">
+                            @foreach ($photos->chunk(4) as $row)
+                                <tr>
+                                    @foreach ($row as $src)<td><img src="{{ $src }}" alt=""></td>@endforeach
+                                    @for ($i = $row->count(); $i < 4; $i++)<td></td>@endfor
+                                </tr>
+                            @endforeach
+                        </table>
+                    @endif
+                </div>
+            @endforeach
+        @endif
     @endif
 @endsection

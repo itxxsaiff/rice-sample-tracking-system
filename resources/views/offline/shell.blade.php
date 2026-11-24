@@ -27,7 +27,7 @@
 <body data-offline-app>
     <aside class="app-sidebar">
         <a href="#/" class="sidebar-brand">
-            <img src="/images/logo.png" alt="Ukasha Pacific International" class="brand-logo" style="height:38px;width:auto">
+            <img src="/images/logo-dark.png" alt="Ukasha Pacific International" class="brand-logo" style="height:38px;width:auto">
             <span class="brand-text">Rice Samples<small>Tracking &amp; Dispatch</small></span>
         </a>
         <nav class="sidebar-nav" data-offline-nav></nav>
@@ -65,7 +65,7 @@
     <div class="offcanvas offcanvas-start offcanvas-nav" tabindex="-1" id="mobileNav" style="width: 290px">
         <div class="offcanvas-header border-bottom">
             <div class="d-flex align-items-center gap-2">
-                <img src="/images/logo.png" alt="Ukasha Pacific International" class="brand-logo" style="height:40px;width:auto">
+                <img src="/images/logo-dark.png" alt="Ukasha Pacific International" class="brand-logo" style="height:40px;width:auto">
                 <div><div class="fw-bold">Rice Samples</div><div class="small text-muted"><span data-user-name></span> · Working offline</div></div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>

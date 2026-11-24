@@ -130,6 +130,30 @@ class LoadingTest extends TestCase
         $this->assertSame(LoadingStatus::Completed, $dispatch->fresh()->loading_status);
     }
 
+    public function test_number_of_bags_is_worked_out_from_quantity_and_bag_size(): void
+    {
+        $this->assertSame(1600, Loading::bagsFor(1000, 'maund', '25 kg'));   // 1000 × 40 kg ÷ 25 kg
+        $this->assertSame(12, Loading::bagsFor(15, 'maund', '50 kg'));
+        $this->assertSame(27, Loading::bagsFor(10, 'maund', '15 kg'));       // 26.67 → a part-filled last bag still counts
+        $this->assertNull(Loading::bagsFor(100, 'maund', null));
+        $this->assertNull(Loading::bagsFor(null, 'maund', '25 kg'));
+
+        $dispatch = SampleDispatch::factory()->confirmed()->create(['confirmed_quantity' => 2000]);
+        $this->actingAs($this->user)->get(route('loadings.create', $dispatch))->assertOk()
+            ->assertSee('data-bag-calc', false)->assertSee('data-kg-per-unit="40"', false);
+
+        // Left empty: filled in on save. Typed in: kept as typed.
+        $this->post(route('loadings.store', $dispatch), ['truck_number' => 'TLE-1', 'loading_date' => now()->toDateString(), 'quantity' => 1000, 'packing_type' => '25 kg']);
+        $this->post(route('loadings.store', $dispatch), ['truck_number' => 'TLE-2', 'loading_date' => now()->toDateString(), 'quantity' => 500, 'packing_type' => '50 kg', 'bag_count' => 405]);
+        $this->assertSame([1600, 405], Loading::orderBy('id')->pluck('bag_count')->all());
+
+        // Editing the quantity with the bags cleared works them out again (loaded trucks: admin only).
+        $truck = Loading::orderBy('id')->first();
+        $this->actingAs(User::factory()->admin()->create())->put(route('loadings.update', $truck), ['truck_number' => 'TLE-1', 'loading_date' => now()->toDateString(), 'quantity' => 500, 'packing_type' => '25 kg', 'bag_count' => ''])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(800, $truck->fresh()->bag_count);
+    }
+
     public function test_truck_recorder_can_still_add_photos_after_the_order_completed_itself(): void
     {
         $dispatch = SampleDispatch::factory()->confirmed()->create(['confirmed_quantity' => 100]);

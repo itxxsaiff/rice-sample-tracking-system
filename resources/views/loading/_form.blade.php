@@ -17,14 +17,15 @@
         <x-form.input class="col-6 mb-3" name="driver_phone" type="tel" label="Driver phone" :value="$loading->driver_phone" inputmode="tel" />
     </div>
 </div>
-<div class="form-section">
+@php $unit = $loading->quantity_unit ?? $dispatch->confirmed_quantity_unit ?? config('rice.order_unit'); @endphp
+<div class="form-section" data-bag-calc data-kg-per-unit="{{ config('rice.unit_kg')[$unit] ?? '' }}">
     <div class="form-section-title"><i class="bi bi-box-seam"></i> Quantity &amp; packing</div>
     <div class="row">
-        @php $unit = $loading->quantity_unit ?? $dispatch->confirmed_quantity_unit ?? config('rice.order_unit'); @endphp
         <x-form.input class="col-md-4 mb-3" name="quantity" type="number" label="Loaded quantity" :value="$loading->quantity !== null ? (float) $loading->quantity : null" required step="0.01" min="0" inputmode="decimal"
                       :suffix="config('rice.quantity_units')[$unit] ?? $unit"
                       :hint="$editing ? null : 'When the full order quantity is loaded, the order is completed automatically.'" />
-        <x-form.input class="col-6 col-md-4 mb-3" name="bag_count" type="number" label="No. of bags" :value="$loading->bag_count" min="0" step="1" inputmode="numeric" />
+        <x-form.input class="col-6 col-md-4 mb-3" name="bag_count" type="number" label="No. of bags" :value="$loading->bag_count" min="0" step="1" inputmode="numeric"
+                      hint="Worked out from quantity and bag size (1 maund = 40 kg)." />
         <x-form.select class="col-6 col-md-4 mb-3" name="packing_type" label="Packing (bag size)" :options="config('rice.packing_types')" :value="$loading->packing_type" placeholder="Select" />
         <x-form.textarea class="col-md-6 mb-3" name="packing_details" label="Packing details" :value="$loading->packing_details" rows="2" placeholder="Bag size, marking, stitching…" />
         <x-form.textarea class="col-md-6 mb-0" name="notes" label="Loading notes" :value="$loading->notes" rows="2" />

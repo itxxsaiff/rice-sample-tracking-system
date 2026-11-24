@@ -85,28 +85,40 @@ class BuyerController extends Controller
             ->limit(PdfReport::MAX_ROWS)->get();
         $dispatches->each->setRelation('buyer', $buyer);
 
+        // Chosen before exporting: the samples sent, or the trucks loaded (with their photos).
+        $part = $request->input('part') === 'loadings' ? 'loadings' : 'samples';
         $loadings = Loading::query()
             ->whereIn('sample_dispatch_id', $dispatches->modelKeys())
-            ->with(['dispatch:id,dispatch_number,buyer_id,sample_id', 'dispatch.sample:id,sample_number,mill_id,rice_variety_id', 'dispatch.sample.mill:id,name', 'dispatch.sample.variety:id,name'])
+            ->with(['dispatch:id,dispatch_number,buyer_id,sample_id', 'dispatch.sample:id,sample_number,mill_id,rice_variety_id', 'dispatch.sample.variety:id,name'])
+            ->with($part === 'loadings' ? ['photos'] : [])
             ->withCount('photos')
             ->oldest('loading_date')->oldest('id')
             ->get();
         $confirmed = $dispatches->filter->isConfirmed();
 
+        $summary = $part === 'samples' ? [
+            'Samples sent' => number_format($dispatches->count()),
+            'Awaiting' => number_format($dispatches->filter->isPending()->count()),
+            'Confirmed' => number_format($confirmed->count()),
+            'Rejected' => number_format($dispatches->filter->isRejected()->count()),
+            'Agreed' => RecordsController::quantities($confirmed, 'confirmed_quantity', 'confirmed_quantity_unit'),
+            'Loaded' => RecordsController::quantities($loadings, 'quantity', 'quantity_unit'),
+        ] : [
+            'Trucks' => number_format($loadings->count()),
+            'Loaded' => RecordsController::quantities($loadings, 'quantity', 'quantity_unit'),
+            'Bags' => number_format($loadings->sum('bag_count')),
+            'Orders' => number_format($loadings->pluck('sample_dispatch_id')->unique()->count()),
+            'Photos' => number_format($loadings->sum('photos_count')),
+        ];
+
         return PdfReport::download('pdf.buyer', [
             'buyer' => $buyer,
+            'part' => $part,
             'dispatches' => $dispatches,
             'loadings' => $loadings,
             'statusLabel' => $status ? self::STATUSES[$status] : null,
-            'summary' => [
-                'Samples sent' => number_format($dispatches->count()),
-                'Awaiting' => number_format($dispatches->filter->isPending()->count()),
-                'Confirmed' => number_format($confirmed->count()),
-                'Rejected' => number_format($dispatches->filter->isRejected()->count()),
-                'Agreed' => RecordsController::quantities($confirmed, 'confirmed_quantity', 'confirmed_quantity_unit'),
-                'Loaded' => RecordsController::quantities($loadings, 'quantity', 'quantity_unit'),
-            ],
-        ], 'Buyer Statement', 'buyer-'.$buyer->name);
+            'summary' => $summary,
+        ], $part === 'samples' ? 'Samples Sent' : 'Truck Loadings', 'buyer-'.$buyer->name.'-'.($part === 'samples' ? 'samples' : 'trucks'));
     }
 
     public function edit(Buyer $buyer): View

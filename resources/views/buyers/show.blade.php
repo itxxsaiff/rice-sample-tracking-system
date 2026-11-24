@@ -10,7 +10,10 @@
                     </div>
                 </div>
                 <div class="page-actions">
-                    <a href="{{ route('buyers.pdf', ['buyer' => $buyer, 'status' => $status]) }}" class="btn btn-primary" data-pdf-export><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
+                    @include('partials.pdf-choice', ['title' => $buyer->name, 'options' => [
+                        [route('buyers.pdf', ['buyer' => $buyer, 'status' => $status, 'part' => 'samples']), 'Samples sent', 'Every sample sent, the answer, agreed quantity and rate, and how much is loaded.', 'basket'],
+                        [route('buyers.pdf', ['buyer' => $buyer, 'status' => $status, 'part' => 'loadings']), 'Truck loadings', 'Every truck loaded for this buyer, with its photos.', 'truck'],
+                    ]])
                     <a href="{{ route('buyers.edit', $buyer) }}" class="btn btn-light"><i class="bi bi-pencil"></i> Edit</a>
                     @can('delete', $buyer)
                         <form method="POST" action="{{ route('buyers.destroy', $buyer) }}" data-confirm="This buyer has no dispatches yet, so it can be removed permanently." data-confirm-title="Delete {{ $buyer->name }}?" data-confirm-button="Delete">

@@ -177,6 +177,7 @@ class SampleTest extends TestCase
         $this->actingAs($this->user);
         $this->get(route('samples.index'))->assertOk()->assertSee($sample->sample_number);
         $this->get(route('samples.create'))->assertOk()->assertSee('Add another sample')
+            ->assertSee('data-number-next="'.((int) substr(ReferenceNumber::peek('sample'), 4)).'"', false)->assertSee('data-row-ref', false)
             ->assertDontSee('name="samples[0][sample_number]"', false)->assertDontSee('Take photo')->assertDontSee('bundle');
         $this->get(route('samples.show', $sample))->assertOk()->assertSee($sample->mill->name);
         $this->get(route('samples.edit', $sample))->assertOk();

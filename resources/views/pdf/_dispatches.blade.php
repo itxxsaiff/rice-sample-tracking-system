@@ -2,6 +2,7 @@
 @php
     $hideBuyer ??= false;
     $showLoaded ??= false;
+    $sampleDetails ??= true; // mill and city under the sample number
     $agreed = $dispatches->filter->isConfirmed()->groupBy('confirmed_quantity_unit')->map(fn ($rows) => $rows->sum('confirmed_quantity'));
 @endphp
 <table class="grid">
@@ -24,7 +25,7 @@
                 <td class="nowrap strong">{{ $dispatch->dispatch_number }}</td>
                 <td>
                     <div class="strong">{{ $dispatch->sample->sample_number }} · {{ $dispatch->sample->variety->name }}</div>
-                    <div class="sub">{{ $dispatch->sample->mill->name }}, {{ $dispatch->sample->mill->city }}</div>
+                    @if ($sampleDetails)<div class="sub">{{ $dispatch->sample->mill->name }}, {{ $dispatch->sample->mill->city }}</div>@endif
                 </td>
                 @unless ($hideBuyer)
                     <td><div class="strong">{{ $dispatch->buyer->name }}</div><div class="sub">{{ $dispatch->buyer->city }}</div></td>

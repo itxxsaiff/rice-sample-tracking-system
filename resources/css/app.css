@@ -1649,3 +1649,33 @@ td .mono {
 .date-filter .form-control {
     min-width: 0;
 }
+
+.date-filter .number-prefix {
+    min-width: 0;
+    padding-inline: .45rem;
+    font-weight: 500;
+    background: #fff;
+    border-right: 0;
+}
+
+.date-filter .number-prefix+.form-control {
+    border-left: 0;
+    padding-left: 0;
+}
+
+/* Automatic sample number shown on each "Add Sample" row (read-only). */
+.sample-row-num .sample-row-ref {
+    width: auto;
+    height: auto;
+    border-radius: 999px;
+    background: #eaf0f7;
+    color: var(--brand);
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .2rem .6rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.sample-row-num .sample-row-ref:empty {
+    display: none;
+}
